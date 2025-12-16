@@ -8,11 +8,7 @@
 ## Keywords
 Archiveology, Rememberance, hauntology, speculative listening, Ritual, ghosts, fiction, imagination, Critical Fabulation, subjugated knowledges, natural sounds, fragments.
 
-<P5Sketch :sketch="exampleSketch">
 
-</P5Sketch>
-
-<ThreeScene :setupScene="exampleScene" />
 
 ## Motivation
 We can not imagine how it has been, but it has existed.  
@@ -37,24 +33,4 @@ The project wants to open a space for reflection and imagination – not by writ
 ## Planned Outcome / Output Format
 The instrument will be crafted from various resonant woods and shaped like a rotating drum, creating a continuous cycle of falling and rising. Inside, it will hold many kinds of seeds — each carrying its own texture, sound, and memory.
 
-
-
-
-
-<script setup>
-import exampleSketch from '../../.vitepress/theme/exampleSketch';
-import ThreeScene from '../../.vitepress/theme/components/ThreeScene.vue';
-
-import P5Sketch from '../../.vitepress/theme/components/P5Sketch.vue';
-import exampleScene from '../../.vitepress/theme/exampleScene';
-// const chartData = [
-//   { name: 'A', value: 30 },
-//   { name: 'B', value: 80 },
-//   { name: 'C', value: 45 },
-//   { name: 'D', value: 60 },
-//   { name: 'E', value: 20 },
-//   { name: 'F', value: 90 },
-//   { name: 'G', value: 55 },
-// ];
-</script> 
 
