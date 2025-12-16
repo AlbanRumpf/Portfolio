@@ -66,7 +66,7 @@ const markdownFiles = import.meta.glob('../../../works/**/index.md', {
   as: 'raw',
   eager: true,
 })
-const imageFiles = import.meta.glob('../../../works/**/cover.{jpg,jpeg,png,webp}', {
+const imageFiles = import.meta.glob('../../../works/**/cover.*', {
   eager: true,
   import: 'default',
 })
