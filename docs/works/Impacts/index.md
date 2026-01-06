@@ -4,6 +4,6 @@
 
 
 ## Abstract
-Dies, Das, Ananas
+Abstract 
 
 
