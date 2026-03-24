@@ -65,8 +65,7 @@ function pushFromMaps(
 
     const route = `/${categoryKey}/?id=${slug}`
 
-    const folder = path.replace(/\/index\.md$/, '/')
-    const imageKey = Object.keys(imgs).find(k => k.startsWith(folder))
+    const imageKey = Object.keys(imgs).find(k => k.includes(`/${slug}/`))
 
     const mod = (mods as any)[path] as any
     const frontmatter = mod?.frontmatter || fm || {}
@@ -78,7 +77,7 @@ function pushFromMaps(
       imageUrl = imgs[imageKey] as string
       console.log('Image for', slug, ':', imageUrl, 'from key:', imageKey)
     } else {
-      console.log('No image found for', slug, 'folder:', folder)
+      console.log('No image found for', slug)
       console.log('Available image keys:', Object.keys(imgs))
     }
 
@@ -86,13 +85,12 @@ function pushFromMaps(
     let audioUrl: string | null = null
     const audioField = typeof frontmatter.audio === 'string' ? frontmatter.audio : null
     if (audioField && audioMap) {
-      const folder = path.replace(/\/index\.md$/, '/')
       const normalizedAudio = audioField.startsWith('./') ? audioField.slice(2) : audioField
-      const audioKey = Object.keys(audioMap).find(k => k.startsWith(folder + normalizedAudio))
+      const audioKey = Object.keys(audioMap).find(k => k.includes(`/${slug}/`) && k.endsWith(`/${normalizedAudio}`))
       if (audioKey) {
         audioUrl = audioMap[audioKey]
       }
-      console.log('Audio resolve', { slug, folder, normalizedAudio, found: !!audioKey, keys: Object.keys(audioMap) })
+      console.log('Audio resolve', { slug, normalizedAudio, found: !!audioKey, keys: Object.keys(audioMap) })
     }
 
     cards.value.push({
