@@ -19,7 +19,7 @@ export default defineConfig({
       // ❌ no BASE_URL here, just plain paths
       { text: 'Home',  link: '/' },
       { text: 'about', link: '/about/' },
-      { text: 'works', link: '/works/' },
+      { text: 'Installations', link: '/installations/' },
     ],
   },
 

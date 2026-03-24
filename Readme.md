@@ -14,7 +14,7 @@ Key points:
 - Static site generated with VitePress
 - Custom theme and Vue components under `docs/.vitepress/theme`
 - Tailwind CSS (including typography plugin) for styling
-- Works gallery dynamically generated from `docs/works/*/index.md`
+- Works gallery dynamically generated from `docs/installations/*/index.md`
 
 ---
 

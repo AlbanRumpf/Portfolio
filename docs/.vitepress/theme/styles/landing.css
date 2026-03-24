@@ -3,9 +3,9 @@
 /* /////////////////////// */
 
 html:has(.landing) {
-  --vp-c-bg: #101010;
-  background-color: #101010;
-}
+  --vp-c-bg: #292c2f;
+  background-color: #292c2f;
+} 
 
 .landing {
   overflow-x: hidden;

@@ -410,7 +410,7 @@ const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
         0deg,
         rgba(23, 23, 23, 0) 0%,
         rgba(16, 16, 16, 0.7) 50%,
-        #101010 100%
+        #292c2f 100%
       );
       position: absolute;
       top: 0;
@@ -429,7 +429,7 @@ const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
         180deg,
         rgba(23, 23, 23, 0) 0%,
         rgba(16, 16, 16, 0.7) 50%,
-        #101010 100%
+        #292c2f 100%
       );
       position: absolute;
       bottom: 0;

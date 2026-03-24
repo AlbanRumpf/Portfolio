@@ -26,7 +26,7 @@ import HeroDiagram from './HeroDiagram.vue'
   position: relative;
   z-index: 2;
   margin-bottom: 0;
-  background-color: #101010;
+  background-color: #292c2f;
 
   @media (min-width: 768px) {
     margin-bottom: 60px;

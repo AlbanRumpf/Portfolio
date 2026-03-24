@@ -103,3 +103,13 @@
 .vp-sponsor-grid.medium .vp-sponsor-grid-image[alt='JetBrains'] {
   max-height: 100px;
 }
+
+/* Site background override (use a true charcoal grey) */
+:root {
+  --site-bg: #292c2f;
+}
+
+/* Override Tailwind utility to ensure consistent background across components */
+.bg-gray-900 {
+  background-color: var(--site-bg) !important;
+}

@@ -4,7 +4,7 @@ This project uses **VitePress + Vue** but behaves like a small SPA portfolio:
 
 * `/` → landing page with **WorkStack** (list of works)
 * `/about/` → static about page
-* `/works/?id=some-slug` → **WorkPage** (work detail with sidebar)
+* `/installations/?id=some-slug` → **WorkPage** (work detail with sidebar) — the same pattern applies to `/soundworks/` and `/paintings-sketches/`
 
 Routing has 3 main layers:
 
@@ -28,7 +28,7 @@ export default defineConfig({
     nav: [
       { text: 'Home',  link: '/' },
       { text: 'about', link: '/about/' },
-      { text: 'works', link: '/works/' }
+      { text: 'Installations', link: '/installations/' }
     ]
   }
 })
@@ -61,11 +61,11 @@ const nav = theme.value.nav || []
 </a>
 ```
 
-* `item.link` is `/`, `/about/`, `/works/`
+* `item.link` is `/`, `/about/`, `/installations/`
 * `withBase()` turns this into:
 
-  * dev: `/works/`
-  * GitHub Pages: `/my-awsome-portfolio/works/`
+  * dev: `/installations/`
+  * GitHub Pages: `/my-awsome-portfolio/installations/`
 
 So you never hardcode the repo name into links.
 
@@ -73,19 +73,19 @@ So you never hardcode the repo name into links.
 
 ## 2. How works are discovered and linked
 
-Both **WorkStack.vue** and **WorkPage.vue** discover works automatically from Markdown files in `works/**/index.md`.
+Both **WorkStack.vue** and **WorkPage.vue** discover works automatically from Markdown files in `installations/**/index.md` (and analogous folders like `soundworks/**/index.md` and `paintings-sketches/**/index.md).
 
 ### Detection from the filesystem
 
 In both components:
 
 ```ts
-const markdownFiles = import.meta.glob('../../../works/**/index.md', {
+const markdownFiles = import.meta.glob('../../../installations/**/index.md', {
   as: 'raw',
   eager: true
 })
 
-const imageFiles = import.meta.glob('../../../works/**/cover.{jpg,jpeg,png,webp}', {
+const imageFiles = import.meta.glob('../../../installations/**/cover.{jpg,jpeg,png,webp}', {
   eager: true,
   import: 'default'
 })
@@ -94,23 +94,23 @@ const imageFiles = import.meta.glob('../../../works/**/cover.{jpg,jpeg,png,webp}
 For each `index.md`:
 
 ```ts
-// docs/works/my-work/index.md -> slug = "my-work"
-const match = path.match(/works\/([^/]+)\/index\.md$/)
+// docs/installations/my-work/index.md -> slug = "my-work"
+const match = path.match(/installations\/([^/]+)\/index\.md$/)
 const slug = match?.[1] ?? ''
 ```
 
 Then a **work URL** is built as:
 
 ```ts
-const route = `/works/?id=${slug}`
+const route = `/installations/?id=${slug}`
 ```
 
 So each work has a URL like:
 
-* `/works/?id=my-work`
-* `/works/?id=another-project`
+* `/installations/?id=my-work`
+* `/installations/?id=another-project`
 
-**Important:** these `route`s are **base-less**, meaning they start with `/works/...`.
+**Important:** these `route`s are **base-less**, meaning they start with `/installations/...`. 
 We always apply `withBase()` when rendering them.
 
 ---
@@ -125,14 +125,14 @@ For each work, it creates a card:
 <a
   v-for="card in cards"
   :key="card.slug"
-  :href="withBase(card.route)"  <!-- /works/?id=slug with base added -->
+  :href="withBase(card.route)"  <!-- /installations/?id=slug with base added -->
 >
   <!-- Cover + text -->
 </a>
 ```
 
-* Clicking a card sends you to `/works/?id=<slug>` (with base in production).
-* This loads the `/works/` route where **WorkPage** is rendered.
+* Clicking a card sends you to `/installations/?id=<slug>` (with base in production).
+* This loads the `/installations/` route where **WorkPage** is rendered.
 
 ---
 
@@ -143,18 +143,18 @@ In `Layout.vue`:
 ```ts
 const currentPageComponent = computed(() => {
   if (frontmatter.value.layout === 'home') return WorkStack
-  if (route.path.startsWith('/works/')) return WorkPage
+  if (route.path.startsWith('/installations/')) return WorkPage
   if (route.path.startsWith('/about')) return AboutPage
   return null
 })
 ```
 
 * If a page has `layout: home` in its frontmatter, it renders **WorkStack**.
-* If the URL path starts with `/works/`, it renders **WorkPage**.
+* If the URL path starts with `/installations/`, it renders **WorkPage**.
 * `/about/` uses **AboutPage**.
 * Anything else falls back to default `<Content />`.
 
-So `/works/?id=slug` → `route.path === '/works/'` → `WorkPage`.
+So `/installations/?id=slug` → `route.path === '/installations/'` → `WorkPage`.
 
 ---
 
@@ -171,7 +171,7 @@ So `/works/?id=slug` → `route.path === '/works/'` → `WorkPage`.
 Same discovery as in WorkStack, but with an extra `component`:
 
 ```ts
-const markdownModules = import.meta.glob('../../../works/**/index.md', {
+const markdownModules = import.meta.glob('../../../installations/**/index.md', {
   eager: true
 })
 
@@ -180,7 +180,7 @@ cards.value.push({
   title,
   name,
   excerpt,
-  route: `/works/?id=${slug}`,
+  route: `/installations/?id=${slug}`,
   image,
   component: mod?.default || null  // Vue component compiled from markdown
 })
@@ -206,7 +206,7 @@ onMounted(() => {
 })
 ```
 
-* When you arrive at `/works/?id=my-work`, the query string is parsed.
+* When you arrive at `/installations/?id=my-work`, the query string is parsed.
 * `currentSlug` is set to `my-work`.
 * If no `id` is provided, it falls back to the **first** work.
 
@@ -272,24 +272,24 @@ In the template:
 
 Result:
 
-* Click **from WorkStack** → URL `/works/?id=foo` → `currentSlug = 'foo'`
+* Click **from WorkStack** → URL `/installations/?id=foo` → `currentSlug = 'foo'`
 * Click **another work in the sidebar**:
 
   * `currentSlug` changes → UI updates instantly (no refresh)
-  * `router.go()` updates the URL to `/works/?id=bar`
+  * `router.go()` updates the URL to `/installations/?id=bar`
 * You can still copy/paste URLs and use browser back/forward.
 
 ---
 
 ## 7. Summary in plain words
 
-* **All internal routes are written without the GitHub Pages base** (`/`, `/about/`, `/works/`, `/works/?id=slug`).
+* **All internal routes are written without the GitHub Pages base** (`/`, `/about/`, `/installations/`, `/installations/?id=slug`).
 * GitHub Pages base (`/my-awsome-portfolio/`) is applied automatically via:
 
   * `base` in `config.ts`
   * `withBase()` when rendering `<a href>`.
-* **WorkStack**: generates links to `/works/?id=slug` for each work.
-* **Layout**: sees `/works/...` and mounts **WorkPage**.
+* **WorkStack**: generates links to `/installations/?id=slug` for each work.
+* **Layout**: sees `/installations/...` and mounts **WorkPage**.
 * **WorkPage**:
 
   * On mount, reads `?id=slug` to pick which work to show.
