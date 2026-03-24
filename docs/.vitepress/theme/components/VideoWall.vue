@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { withBase } from 'vitepress'
+import { useScreenSize } from '../composables/useScreenSize'
+
+// Detect screen size for mobile adjustments
+const { isMobileOrTablet } = useScreenSize()
 
 // discover hero video (docs/media/hero.*) if present
 const videoFiles = import.meta.glob('../../../media/hero.*', { eager: true, import: 'default' })
@@ -16,9 +20,9 @@ const arrowEl = ref<HTMLElement | null>(null)
 const videoLoaded = ref(false)
 
 // arrow hit zone: invisible area around arrow for full video visibility
-
-const ARROW_HIT_ZONE_Y_BUFFER = 100 // pixels; vertical distance from arrow center (extended for easier triggering)
-const ARROW_HIT_ZONE_X_BUFFER = 100 // pixels; horizontal distance from arrow center (extended for easier triggering)
+// smaller zones on mobile for easier targeting
+const ARROW_HIT_ZONE_Y_BUFFER = computed(() => isMobileOrTablet.value ? 60 : 100)
+const ARROW_HIT_ZONE_X_BUFFER = computed(() => isMobileOrTablet.value ? 60 : 100)
 let arrowCenterX = 0
 let arrowCenterY = 0
 
@@ -82,10 +86,10 @@ function isInArrowHitZone(clientX: number, clientY: number): boolean {
   const distX = Math.abs(clientX - arrowCenterX)
   const distY = Math.abs(clientY - arrowCenterY)
   
-  const inZone = distX <= ARROW_HIT_ZONE_X_BUFFER && distY <= ARROW_HIT_ZONE_Y_BUFFER
+  const inZone = distX <= ARROW_HIT_ZONE_X_BUFFER.value && distY <= ARROW_HIT_ZONE_Y_BUFFER.value
   
   // Debug logging to see what's happening
-  if (inZone || (distX < ARROW_HIT_ZONE_X_BUFFER * 1.5 && distY < ARROW_HIT_ZONE_Y_BUFFER * 1.5)) {
+  if (inZone || (distX < ARROW_HIT_ZONE_X_BUFFER.value * 1.5 && distY < ARROW_HIT_ZONE_Y_BUFFER.value * 1.5)) {
     console.debug('Arrow zone check:', { clientX, clientY, arrowCenterX, arrowCenterY, distX, distY, inZone })
   }
   

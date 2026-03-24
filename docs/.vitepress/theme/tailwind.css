@@ -48,12 +48,50 @@ body,
   --layout-gutter: clamp(1rem, 2vw, 2rem);
   --layout-vertical-pad: clamp(1.5rem, 2.4vw, 2rem);
   --layout-section-pad: clamp(1.25rem, 4vw, 4rem);
+
+  /* Gallery & component tweaks */
+  --gallery-item-width: 280px;
+  --work-card-cols: 3;
+  --work-card-gap: 1.5rem;
+}
+
+/* Tablet: 1024px and below */
+@media (max-width: 1024px) {
+  :root {
+    --layout-max-width: 90%;
+    --gallery-item-width: 240px;
+    --work-card-cols: 2;
+    --work-card-gap: 1.25rem;
+  }
 }
 
 /* Slightly tighten content on smaller laptop widths to reduce accidental overflow */
 @media (max-width: 1440px) {
   :root {
     --layout-max-width: 68rem;
+  }
+}
+
+/* Mobile: 768px and below */
+@media (max-width: 768px) {
+  :root {
+    --layout-max-width: 100%;
+    --layout-gutter: clamp(0.75rem, 4vw, 1.25rem);
+    --layout-vertical-pad: clamp(1rem, 3vw, 1.5rem);
+    --layout-section-pad: clamp(1rem, 5vw, 2rem);
+    --gallery-item-width: 160px;
+    --work-card-cols: 1;
+    --work-card-gap: 1rem;
+  }
+}
+
+/* Small mobile: 480px and below */
+@media (max-width: 480px) {
+  :root {
+    --layout-gutter: 0.5rem;
+    --layout-vertical-pad: 0.75rem;
+    --layout-section-pad: 0.75rem;
+    --gallery-item-width: 120px;
   }
 }
 
@@ -73,7 +111,74 @@ body,
   padding: var(--layout-section-pad);
 }
 
-/* Dotted background */
+/* Mobile-friendly text sizing */
+.text-responsive-h1 {
+  font-size: clamp(1.875rem, 8vw, 3rem); /* h1: mobile to desktop */
+}
+
+.text-responsive-h2 {
+  font-size: clamp(1.5rem, 6vw, 2.25rem); /* h2: mobile to desktop */
+}
+
+.text-responsive-h3 {
+  font-size: clamp(1.25rem, 4vw, 1.875rem); /* h3: mobile to desktop */
+}
+
+/* Grid layouts that adapt to mobile */
+.grid-responsive {
+  display: grid;
+  grid-template-columns: repeat(var(--work-card-cols), 1fr);
+  gap: var(--work-card-gap);
+}
+
+/* Arrow buttons - responsive sizing */
+.arrow-button {
+  transition: all 0.2s ease;
+}
+
+@media (max-width: 768px) {
+  .arrow-button svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+/* Hero section adjustments for mobile */
+.hero-section {
+  height: calc(100vh - 56px); /* navbar is smaller on mobile with Tailwind breakpoints */
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    height: calc(100vh - 64px);
+  }
+}
+
+/* Hide on mobile, show on tablet+ */
+@media (max-width: 768px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .show-mobile {
+    display: none !important;
+  }
+}
+
+/* Mobile-first stack: column on mobile, row on tablet+ */
+.stack-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--work-card-gap);
+}
+
+@media (min-width: 769px) {
+  .stack-mobile {
+    flex-direction: row;
+  }
+}
 body::before {
   content: '';
   position: fixed;

@@ -204,7 +204,7 @@ onUnmounted(() => {
         <VideoWall ref="videoWallRef" />
         
         <!-- arrow fixed at bottom of viewport, only visible on homepage -->
-        <button ref="arrowButtonRef" @click="scrollToBelow" class="fixed left-1/2 transform -translate-x-1/2 z-40 bg-transparent p-2" style="bottom: 24px;" aria-label="Scroll down">
+        <button ref="arrowButtonRef" @click="scrollToBelow" class="fixed left-1/2 transform -translate-x-1/2 z-40 bg-transparent p-2 arrow-button" style="bottom: 24px;" aria-label="Scroll down">
           <svg class="w-10 h-10 text-white" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 5v14"></path>
             <path d="M19 12l-7 7-7-7"/>
@@ -218,7 +218,7 @@ onUnmounted(() => {
         <ShapeBadge :isVisualPage="isVisualPage" :disableHoverEffects="true" :scale="8" :strokeWidth="1.5" :disableCycling="true" :showBackgroundLayers="true" :showHoverText="true" />
         
         <!-- scroll up button that appears at top when scrolled down -->
-        <button v-if="showScrollUpButton" @click="scrollToTop" class="fixed left-1/2 transform -translate-x-1/2 z-40 bg-transparent p-2" style="top: 24px; transition: opacity 0.3s ease;" aria-label="Scroll up">
+        <button v-if="showScrollUpButton" @click="scrollToTop" class="fixed left-1/2 transform -translate-x-1/2 z-40 bg-transparent p-2 arrow-button" style="top: 24px; transition: opacity 0.3s ease;" aria-label="Scroll up">
           <svg class="w-10 h-10 text-white" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 19V5"></path>
             <path d="M5 12l7-7 7 7"/>

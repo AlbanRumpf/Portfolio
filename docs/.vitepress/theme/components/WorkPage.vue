@@ -478,7 +478,7 @@ onMounted(() => {
       <HorizontalImageGallery />
     </div>
 
-    <div v-if="currentCategory !== 'soundworks'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 py-12">
+    <div v-if="currentCategory !== 'soundworks'" class="grid-responsive py-12">
       <div
         v-for="card in sidebarCards"
         :key="card.category + '/' + card.slug"

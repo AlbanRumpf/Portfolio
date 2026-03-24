@@ -321,7 +321,7 @@ onUnmounted(() => {
         <img
           :src="image"
           :alt="`Visual ${index + 1}`"
-          class="h-screen max-h-[600px] object-cover rounded-lg hover:scale-105 transition-transform duration-300 cursor-pointer"
+          class="h-screen max-h-[600px] object-cover rounded-lg hover:scale-105 transition-transform duration-300 cursor-pointer mobile:max-h-[400px] tablet:max-h-[500px]"
           @load="onImageLoad"
         />
         <!-- Metadata displayed underneath -->
@@ -524,6 +524,22 @@ onUnmounted(() => {
   z-index: 20;
 }
 
+/* Mobile: move menu to top and stack horizontally */
+@media (max-width: 768px) {
+  .gallery-menu-vertical {
+    position: static;
+    margin-top: 1rem;
+    gap: 0.75rem;
+    left: auto;
+    top: auto;
+    width: 100%;
+    z-index: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-left: 0;
+  }
+}
+
 .edge-spacer {
   flex: 0 0 auto;
   height: 1px;
@@ -544,6 +560,16 @@ onUnmounted(() => {
   padding-right: 1rem;
   column-gap: 1.35rem;
   column-width: var(--gallery-col-width);
+}
+
+/* Mobile: reduce padding and column width */
+@media (max-width: 768px) {
+  .gallery-grid-wrapper {
+    --gallery-col-width: var(--gallery-item-width, 160px);
+    padding-left: var(--layout-gutter);
+    padding-right: var(--layout-gutter);
+    column-gap: 0.75rem;
+  }
 }
 
 .gallery-grid-item {
