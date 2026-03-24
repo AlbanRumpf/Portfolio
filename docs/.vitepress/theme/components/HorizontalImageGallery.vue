@@ -12,12 +12,21 @@ type ImportMetaWithGlob = ImportMeta & {
 // Import all images from paintings-sketches/images folder
 const imageModules = (import.meta as ImportMetaWithGlob).glob('../../../paintings-sketches/images/*.{jpg,jpeg,png,webp}', { eager: true, query: '?url', import: 'default' })
 
+const imageFilenameByUrl = computed(() => {
+  const entries = Object.entries(imageModules) as Array<[string, string]>
+  return new Map(entries.map(([modulePath, url]) => [url, modulePath.split('/').pop() || '']))
+})
+
+function getImageFilename(imagePath: string): string {
+  return imageFilenameByUrl.value.get(imagePath) || imagePath.split('/').pop() || ''
+}
+
 const images = computed(() => {
   const imgs = Object.values(imageModules) as string[]
   // Sort images by filename numerically (1.jpg, 2.jpg, 10.jpg, etc.)
   return imgs.sort((a, b) => {
-    const fileA = a.split('/').pop() || ''
-    const fileB = b.split('/').pop() || ''
+    const fileA = getImageFilename(a)
+    const fileB = getImageFilename(b)
     const numA = parseInt(fileA.match(/\d+/)?.[0] || '999')
     const numB = parseInt(fileB.match(/\d+/)?.[0] || '999')
     return numA - numB
@@ -62,7 +71,7 @@ let gridMoveResetTimer: ReturnType<typeof setTimeout> | null = null
 
 // Get metadata for an image by filename
 function getMetadata(imagePath: string): ImageMeta | null {
-  const filename = imagePath.split('/').pop() || ''
+  const filename = getImageFilename(imagePath)
   return metadataMap[filename] || null
 }
 
@@ -101,8 +110,8 @@ function getImageGroupOrder(imagePath: string): number {
 }
 
 function numericFilenameSort(a: string, b: string): number {
-  const fileA = a.split('/').pop() || ''
-  const fileB = b.split('/').pop() || ''
+  const fileA = getImageFilename(a)
+  const fileB = getImageFilename(b)
   const numA = parseInt(fileA.match(/\d+/)?.[0] || '999')
   const numB = parseInt(fileB.match(/\d+/)?.[0] || '999')
   return numA - numB

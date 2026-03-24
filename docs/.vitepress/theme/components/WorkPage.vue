@@ -463,7 +463,7 @@ onMounted(() => {
         <Transition name="fade-slide">
           <div v-if="card.audio && audioOpen[card.slug]" class="flex items-center flex-1" style="background-color: #373c40;">
             <audio 
-              :src="withBase(card.audio)" 
+              :src="card.audio" 
               :data-slug="card.slug" 
               :ref="(el) => onAudioMounted(el as HTMLAudioElement, card.slug)"
               controls 
@@ -501,7 +501,7 @@ onMounted(() => {
           <!-- Cover Image -->
           <img
             v-if="card.image"
-            :src="withBase(card.image)"
+            :src="card.image"
             :alt="card.title"
             class="w-full h-full object-cover"
           />
