@@ -195,7 +195,7 @@ onUnmounted(() => {
   </div>
 
   <!-- Normal site chrome (NavBar + content) when unlocked -->
-  <div v-else :class="pageChromeClass" :style="pageChromeStyle">
+  <div v-else :class="['layout-chrome', pageChromeClass]" :style="pageChromeStyle">
     <NavBar :isVisualPage="isVisualPage" :isSoundworksPage="isSoundworksPage" :isInstallationsPage="isInstallationsPage" />
 
     <!-- full-bleed hero video for homepage (hidden until unlocked) -->
@@ -213,7 +213,7 @@ onUnmounted(() => {
       </div>
 
       <!-- content below the hero; the arrow scrolls to this area -->
-      <div id="below-hero" ref="belowHeroRef" class="below-hero flex flex-col items-center justify-center gap-8" style="min-height: 100vh; position: relative; padding: 4rem;">
+      <div id="below-hero" ref="belowHeroRef" class="below-hero layout-section-pad flex flex-col items-center justify-center gap-8" style="min-height: 100vh; position: relative;">
         <!-- Large interactive shape (no hover effects, just cursor tracking) -->
         <ShapeBadge :isVisualPage="isVisualPage" :disableHoverEffects="true" :scale="8" :strokeWidth="1.5" :disableCycling="true" :showBackgroundLayers="true" :showHoverText="true" />
         
@@ -227,7 +227,7 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <main class="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
+    <main class="layout-main">
       <component
         v-if="currentPageComponent"
         :is="currentPageComponent"
