@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
+import portraitImage from '../../../about/Portrait.jpg'
 
 const lineTimers: number[] = []
 
@@ -53,7 +54,7 @@ onUnmounted(() => {
   <div class="flex flex-row gap-12 min-h-[80vh] items-start text-white">
     <!-- Image on left -->
     <div class="flex-shrink-0 pt-4 -ml-47 fade-in-image">
-      <img src="/about/portrait.jpg" alt="Portrait" class="w-80 h-auto rounded-lg" />
+      <img :src="portraitImage" alt="Portrait" class="w-80 h-auto rounded-lg" />
     </div>
     
     <!-- Content on right -->
