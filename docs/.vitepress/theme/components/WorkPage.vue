@@ -221,6 +221,38 @@ const currentCard = computed(() =>
   cards.value.find(card => card.slug === currentSlug.value && card.category === currentCategory.value)
 )
 
+function resolveImageUrl(url?: string | null): string {
+  if (!url) return ''
+
+  // Keep absolute/data URLs untouched
+  if (/^(https?:)?\/\//.test(url) || url.startsWith('data:')) {
+    return url
+  }
+
+  const base = site?.value?.base || '/'
+  const normalizedBase = base.endsWith('/') ? base : `${base}/`
+
+  // Fix accidental duplicated base prefix (e.g. /Portfolio/Portfolio/assets/...)
+  if (normalizedBase !== '/') {
+    const duplicateBase = `${normalizedBase}${normalizedBase.slice(1)}`
+    if (url.startsWith(duplicateBase)) {
+      return `${normalizedBase}${url.slice(duplicateBase.length)}`
+    }
+  }
+
+  // Already base-prefixed
+  if (normalizedBase !== '/' && url.startsWith(normalizedBase)) {
+    return url
+  }
+
+  // Root asset path should be base-prefixed on project-site deployments
+  if (url.startsWith('/assets/')) {
+    return withBase(url)
+  }
+
+  return url
+}
+
 const sidebarCards = computed(() => cards.value.filter(c => c.category === currentCategory.value))
 const soundworkCards = computed(() => {
   const soundworks = cards.value.filter(c => c.category === 'soundworks')
@@ -499,7 +531,7 @@ onMounted(() => {
           <!-- Cover Image -->
           <img
             v-if="card.image"
-            :src="card.image"
+            :src="resolveImageUrl(card.image)"
             :alt="card.title"
             class="w-full h-full object-cover"
           />
@@ -563,7 +595,7 @@ onMounted(() => {
           <!-- Cover Image -->
           <div v-if="currentCard.image" class="mb-8">
             <img
-              :src="currentCard.image"
+              :src="resolveImageUrl(currentCard.image)"
               alt="cover image"
               class="w-full max-h-96 object-cover rounded-2xl"
             />
