@@ -33,7 +33,7 @@ const images = computed(() => {
   })
 })
 
-type GalleryCategory = 'Scans' | 'Sketchbooks' | 'Drawings' | 'Collage' | 'Paintings' | 'Mixed Media' | 'All'
+type GalleryCategory = 'Sketchbooks' | 'Drawings' | 'Collage' | 'Paintings' | 'Mixed Media' | 'All'
 type RealGalleryCategory = Exclude<GalleryCategory, 'All'>
 
 type ImageMeta = {
@@ -47,7 +47,7 @@ type ImageMeta = {
 type ViewMode = 'gallery' | 'grid'
 
 const metadataMap = metadata as Record<string, ImageMeta>
-const galleryCategories: GalleryCategory[] = ['Scans', 'Sketchbooks', 'Drawings', 'Collage', 'Paintings', 'Mixed Media', 'All']
+const galleryCategories: GalleryCategory[] = ['Sketchbooks', 'Drawings', 'Collage', 'Paintings', 'Mixed Media', 'All']
 const selectedCategory = ref<GalleryCategory>('All')
 const viewMode = ref<ViewMode>('gallery')
 
@@ -55,7 +55,7 @@ const menuCategories = computed<GalleryCategory[]>(() => {
   return ['All', ...galleryCategories.filter(cat => cat !== 'All')]
 })
 
-const CATEGORY_ORDER: RealGalleryCategory[] = ['Scans', 'Sketchbooks', 'Drawings', 'Collage', 'Paintings', 'Mixed Media']
+const CATEGORY_ORDER: RealGalleryCategory[] = ['Sketchbooks', 'Drawings', 'Collage', 'Paintings', 'Mixed Media']
 const UNCATEGORIZED_ORDER = CATEGORY_ORDER.length
 
 const scrollContainer = ref<HTMLElement | null>(null)
@@ -77,6 +77,7 @@ function getMetadata(imagePath: string): ImageMeta | null {
 
 function normalizeCategory(raw?: string): GalleryCategory | null {
   const normalized = (raw || '').trim().toLowerCase()
+  if (normalized === 'scans') return 'Mixed Media'
   const found = galleryCategories.find(cat => cat.toLowerCase() === normalized)
   return found || null
 }

@@ -11,6 +11,10 @@ export default defineConfig({
   title: 'Portfolio',
   description: 'A VitePress Site',
 
+  vite: {
+    assetsInclude: ['**/*.JPG', '**/*.JPEG', '**/*.PNG', '**/*.WEBP', '**/*.MP4']
+  },
+
   // GitHub Pages project site: https://<user>.github.io/<repo>/
   base: isProd ? `/${repoName}/` : '/',
 
