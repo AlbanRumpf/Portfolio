@@ -563,7 +563,7 @@ onMounted(() => {
           <!-- Cover Image -->
           <div v-if="currentCard.image" class="mb-8">
             <img
-              :src="withBase(currentCard.image)"
+              :src="currentCard.image"
               alt="cover image"
               class="w-full max-h-96 object-cover rounded-2xl"
             />
