@@ -15,9 +15,12 @@ const posterSrc = computed(() => Object.values(posterFiles)[0] as string | undef
 
 const videoEl = ref<HTMLVideoElement | null>(null)
 const videoMaskEl = ref<HTMLElement | null>(null)
+const actionMenuEl = ref<HTMLElement | null>(null)
 const maskUrl = ref('')
 const arrowEl = ref<HTMLElement | null>(null)
 const videoLoaded = ref(false)
+const actionMenuOpen = ref(false)
+const soundEnabled = ref(false)
 
 // arrow hit zone: invisible area around arrow for full video visibility
 // smaller zones on mobile for easier targeting
@@ -76,6 +79,38 @@ let lastMaskUrl = ''
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v))
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+
+function toggleActionMenu() {
+  actionMenuOpen.value = !actionMenuOpen.value
+}
+
+function toggleSound() {
+  if (!videoEl.value) return
+  const nextMuted = !videoEl.value.muted
+  videoEl.value.muted = nextMuted
+  soundEnabled.value = !nextMuted
+
+  if (soundEnabled.value) {
+    videoEl.value.play().catch(() => {})
+  }
+}
+
+function goToProject() {
+  if (typeof window !== 'undefined') {
+    window.location.assign(withBase('/installations/Impacts/'))
+  }
+}
+
+function onGlobalPointerDown(e: PointerEvent) {
+  if (!actionMenuOpen.value) return
+  const target = e.target as Node | null
+  if (!target) return
+
+  if (actionMenuEl.value?.contains(target)) return
+  if (videoMaskEl.value?.contains(target)) return
+
+  actionMenuOpen.value = false
+}
 
 // check if cursor is within the rectangular hit zone around the arrow
 // simpler rectangular logic ensures consistent triggering from any direction
@@ -168,9 +203,12 @@ function stopDensityLoop() {
 }
 
 onMounted(() => {
+  window.addEventListener('pointerdown', onGlobalPointerDown)
+
   // attempt to autoplay (muted) on mount and ensure loop behavior
   if (videoEl.value) {
     videoEl.value.muted = true
+    soundEnabled.value = false
     videoEl.value.loop = true
 
     const onEnded = () => {
@@ -317,7 +355,7 @@ onMounted(() => {
     videoMaskEl.value?.addEventListener('touchmove', onTouchMove)
     videoMaskEl.value?.addEventListener('touchend', onPointerLeave)
 
-    // quick click preview to force an immediate mask update for testing
+    // toggle action menu on video click
     const onClick = (ev: MouseEvent) => {
       const el = videoMaskEl.value
       if (!el) return
@@ -329,6 +367,7 @@ onMounted(() => {
       targetDensity.value = mapped
       generateMask(mapped, true)
       startDensityLoop()
+      toggleActionMenu()
     }
     videoMaskEl.value?.addEventListener('click', onClick)
 
@@ -436,6 +475,10 @@ onMounted(() => {
   })
 })
 
+onUnmounted(() => {
+  window.removeEventListener('pointerdown', onGlobalPointerDown)
+})
+
 // if the source changes, re-apply loop and try to play
 watch(videoSrc, (val) => {
   if (videoEl.value && val) {
@@ -528,20 +571,40 @@ function generateMask(density = 0.5, force = false) {
     <!-- subtle shadow shape behind the masked video -->
  
 
-    <div v-if="videoSrc" ref="videoMaskEl" :style="{'--mask-url': maskUrl}" class="video-mask relative overflow-hidden" :class="{ 'video-loaded': videoLoaded }">
-      <video
-        ref="videoEl"
-        :src="videoSrc"
-        :poster="posterSrc"
-        autoplay
-        muted
-        playsinline
-        loop
-        class="video-element absolute inset-0"
+    <template v-if="videoSrc">
+      <div ref="videoMaskEl" :style="{'--mask-url': maskUrl}" class="video-mask relative overflow-hidden" :class="{ 'video-loaded': videoLoaded }">
+        <video
+          ref="videoEl"
+          :src="videoSrc"
+          :poster="posterSrc"
+          autoplay
+          muted
+          playsinline
+          webkit-playsinline
+          loop
+          disablePictureInPicture
+          disableRemotePlayback
+          controlsList="nodownload noremoteplayback nofullscreen"
+          @contextmenu.prevent
+          class="video-element absolute inset-0"
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
+
+      <div
+        v-if="actionMenuOpen"
+        ref="actionMenuEl"
+        class="video-action-menu"
       >
-        Your browser does not support the video tag.
-      </video>
-    </div>
+        <button class="video-action-button" @click.stop="toggleSound">
+          {{ soundEnabled ? 'Mute Sound' : 'Play Sound' }}
+        </button>
+        <button class="video-action-button" @click.stop="goToProject">
+          Go to Project
+        </button>
+      </div>
+    </template>
 
     <div v-else class="p-8 text-center text-gray-300">
       <p class="mb-4">No hero video found.</p>
@@ -600,12 +663,50 @@ function generateMask(density = 0.5, force = false) {
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none;
   opacity: 1;
   transition: opacity 200ms ease, transform 240ms cubic-bezier(.2,.9,.3,1);
   border-radius: inherit;
   /* allow nudging the visible video down without changing container height */
   transform: translateY(var(--video-top-offset, 0px));
   will-change: transform;
+}
+
+.video-action-menu {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 120;
+  width: 220px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(120, 120, 120, 0.55);
+  border-radius: 12px;
+  background: rgba(28, 25, 23, 0.92);
+  backdrop-filter: blur(3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.video-action-button {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(120, 120, 120, 0.5);
+  border-radius: 10px;
+  background: rgba(41, 37, 36, 0.98);
+  color: rgba(231, 229, 228, 0.9);
+  text-align: center;
+  font-size: 0.92rem;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.video-action-button:hover {
+  background: rgba(68, 64, 60, 0.98);
+  color: #ffffff;
+  border-color: rgba(168, 162, 158, 0.65);
 }
 
 </style>
