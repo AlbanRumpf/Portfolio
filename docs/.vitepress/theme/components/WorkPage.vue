@@ -257,6 +257,10 @@ function resolveImageUrl(url?: string | null): string {
 }
 
 const sidebarCards = computed(() => cards.value.filter(c => c.category === currentCategory.value))
+const otherCard = computed(() => {
+  const categoryCards = sidebarCards.value
+  return categoryCards.find(c => c.slug !== currentSlug.value)
+})
 const soundworkCards = computed(() => {
   const soundworks = cards.value.filter(c => c.category === 'soundworks')
   // Sort by year descending (newest first, oldest last)
@@ -270,6 +274,11 @@ const soundworkCards = computed(() => {
 // Debug: log what cards we have
 console.log('All cards:', cards.value)
 console.log('Sidebar cards:', sidebarCards.value)
+
+// Watch for currentSlug changes to debug otherCard
+watch(currentSlug, () => {
+  console.log('Current slug changed to:', currentSlug.value)
+})
 
 // Track if detail panel is open
 const isPanelOpen = ref(false)
@@ -555,44 +564,38 @@ onMounted(() => {
       @click.self="closePanel"
     >
       <!-- Backdrop -->
-      <div class="absolute inset-0 bg-black bg-opacity-50 transition-opacity" @click="closePanel"></div>
+      <div class="absolute inset-0 transition-opacity" style="background-color: #555a5e;" @click="closePanel"></div>
       
-      <!-- Left Navigation Menu -->
-      <nav class="absolute left-1/7 top-[30%] transform -translate-y-1/2 z-[70] flex flex-col gap-30">
+      <!-- Left Side: Other Project Card -->
+      <div v-if="otherCard" class="absolute left-8 top-[30%] transform -translate-y-1/2 z-[70]">
         <a
-          @click="closePanel"
-          :href="withBase(`/${currentCategory}/`)"
-          class="text-white text-2xl font-normal hover:opacity-70 transition-opacity cursor-pointer"
+          :href="withBase(otherCard.route)"
+          @click.prevent="openPanel(otherCard.slug, otherCard.route)"
+          class="relative w-48 h-48 rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl block group"
         >
-          Back
+          <!-- Cover Image -->
+          <img
+            v-if="otherCard.image"
+            :src="resolveImageUrl(otherCard.image)"
+            :alt="otherCard.title"
+            class="w-full h-full object-cover"
+          />
+          <!-- Fallback -->
+          <div v-else class="w-full h-full bg-gray-700 flex items-center justify-center">
+            <span class="text-white text-center px-4 text-sm">{{ otherCard.title }}</span>
+          </div>
+          
+          <!-- Title Overlay - only shows on hover -->
+          <div class="absolute inset-0 bg-black opacity-0 group-hover:opacity-40 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+            <h3 class="text-white text-center font-semibold px-4 text-sm">
+              {{ otherCard.title }}
+            </h3>
+          </div>
         </a>
-        <a
-          @click="() => {
-            isPanelOpen = false;
-            currentSlug = undefined;
-            router.go(withBase('/'));
-          }"
-          href="#"
-          class="text-white text-2xl font-normal hover:opacity-70 transition-opacity cursor-pointer"
-        >
-          Home
-        </a>
-      </nav>
+      </div>
       
       <!-- Panel -->
       <div class="relative h-full w-full md:w-3/4 lg:w-2/3 shadow-2xl overflow-y-auto transform transition-transform duration-300 ease-in-out" :style="{ backgroundColor: currentCategory === 'soundworks' ? '#373c40' : '#292c2f' }">
-        <!-- Close Button -->
-        <button
-          @click="closePanel"
-          class="sticky top-4 right-4 float-right z-10 p-3 hover:bg-gray-700 rounded-full text-white transition-colors"
-          :style="{ backgroundColor: currentCategory === 'soundworks' ? '#434850' : '#1f2937' }"
-          aria-label="Close panel"
-        >
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
-
         <!-- Panel Content -->
         <div v-if="currentCard" class="p-8">
           <!-- Cover Image -->

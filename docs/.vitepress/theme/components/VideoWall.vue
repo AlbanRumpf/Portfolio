@@ -97,7 +97,7 @@ function toggleSound() {
 
 function goToProject() {
   if (typeof window !== 'undefined') {
-    window.location.assign(withBase('/installations/Impacts/'))
+    window.location.assign(withBase('/installations/?id=Impacts'))
   }
 }
 
