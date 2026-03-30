@@ -67,14 +67,14 @@
     "year": "",
     "materials": "",
     "dimensions": "",
-    "category": "Sketchbooks"
+    "category": "Drawings"
   },
   "11.jpg": {
     "title": "Untitled",
     "year": "",
     "materials": "",
     "dimensions": "",
-    "category": "Sketchbooks"
+    "category": ["Sketchbooks", "Drawings"]
   },
   "12.jpg": {
     "title": "Framework",
@@ -95,14 +95,14 @@
     "year": "",
     "materials": "Aquarelle, Charcoal on Paper",
     "dimensions": "",
-    "category": "Drawings"
+    "category": "Paintings"
   },
   "15.jpg": {
     "title": "Untitled",
     "year": "",
     "materials": "Aquarelle on Paper",
     "dimensions": "",
-    "category": "Drawings"
+    "category": "Paintings"
   },
   "16.jpg": {
     "title": "Bird",
@@ -137,7 +137,7 @@
     "year": "",
     "materials": "Spray paint, Wire, insulated Cable, Canvas",
     "dimensions": "",
-    "category": ["Paintings", "Mixed Media"]
+    "category": ["Mixed Media"]
     }
 }
 

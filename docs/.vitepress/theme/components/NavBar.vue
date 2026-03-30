@@ -39,7 +39,7 @@ function onMenuMouseLeave() {
     <!-- minimal menu that appears next to the badge -->
     <nav class="minimal-menu" @mousemove="onMenuMouseMove" @mouseleave="onMenuMouseLeave">
       <a :href="withBase('/about/')" class="menu-link">About</a>
-      <a :href="withBase('/soundworks/')" class="menu-link">Soundworks</a>
+      <a :href="withBase('/soundworks/')" class="menu-link">Sound</a>
       <a :href="withBase('/installations/')" class="menu-link">Installations</a>
       <a :href="withBase('/paintings-sketches/')" class="menu-link">Visual</a>
     </nav>
