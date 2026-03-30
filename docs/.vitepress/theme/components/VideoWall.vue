@@ -674,7 +674,7 @@ function generateMask(density = 0.5, force = false) {
 
 .video-action-menu {
   position: absolute;
-  top: 16px;
+  bottom: 16px;
   right: 16px;
   z-index: 120;
   width: 220px;

@@ -120,7 +120,7 @@ const offsetBack = { x: -3, y: 3 }
 const offsetFront = { x: 2, y: -2 }
 
 // Hover text animation
-const followUpWords = ['kinda...', 'somewhat...', 'partially...', 'sorta...', 'more or less...',  'somehow...']
+const followUpWords = ['kinda...', 'somewhat...', 'partially...', 'sorta...', 'more or less...',  'somehow...', 'or did you...', 'in conjunction with...', 'but...', 'also...', 'depending on your definition of...', 'arguably...', 'on some level...', 'maybe...', 'to an extend...', 'in a way...']
 const currentFollowUpWord = ref(followUpWords[0])
 let followUpWordTimeoutId: ReturnType<typeof setTimeout> | null = null
 
