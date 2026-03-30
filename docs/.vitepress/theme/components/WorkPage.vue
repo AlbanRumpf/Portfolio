@@ -63,6 +63,9 @@ function pushFromMaps(
     const match = path.match(new RegExp(categoryKey + "\\/([^/]+)\\/index\\.md$"))
     const slug = match?.[1] ?? ''
 
+    // Skip category index pages like docs/installations/index.md
+    if (!slug) continue
+
     const route = `/${categoryKey}/?id=${slug}`
 
     const imageKey = Object.keys(imgs).find(k => k.includes(`/${slug}/`))

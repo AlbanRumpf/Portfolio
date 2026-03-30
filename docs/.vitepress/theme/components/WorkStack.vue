@@ -43,6 +43,7 @@ for (const path in markdownFiles) {
   // docs/installations/my-work/index.md -> slug = "my-work"
   const match = path.match(/installations\/([^/]+)\/index\.md$/)
   const slug = match?.[1] ?? ''
+  if (!slug) continue
 
   const route = `/installations/?id=${slug}`
 
