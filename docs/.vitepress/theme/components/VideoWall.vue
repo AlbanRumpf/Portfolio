@@ -125,7 +125,6 @@ function isInArrowHitZone(clientX: number, clientY: number): boolean {
   
   // Debug logging to see what's happening
   if (inZone || (distX < ARROW_HIT_ZONE_X_BUFFER.value * 1.5 && distY < ARROW_HIT_ZONE_Y_BUFFER.value * 1.5)) {
-    console.debug('Arrow zone check:', { clientX, clientY, arrowCenterX, arrowCenterY, distX, distY, inZone })
   }
   
   // rectangular zone: within X and Y buffers = fully open
@@ -136,7 +135,6 @@ function isInArrowHitZone(clientX: number, clientY: number): boolean {
 function setArrowCenter(x: number, y: number) {
   arrowCenterX = x
   arrowCenterY = y
-  console.debug('arrow center updated', { arrowCenterX, arrowCenterY, xBuffer: ARROW_HIT_ZONE_X_BUFFER, yBuffer: ARROW_HIT_ZONE_Y_BUFFER })
 }
 
 // Expose method to parent component
@@ -147,7 +145,6 @@ defineExpose({
 let densityTick = 0
 function startDensityLoop() {
   if (rafId !== null) return
-  console.debug('startDensityLoop')
   function step() {
     densityTick++
 
@@ -168,7 +165,6 @@ function startDensityLoop() {
     // throttle frequency: less frequent even while moving for a more deliberate feel
     const throttleFrames = isPointerActive ? ACTIVE_THROTTLE_FRAMES : INACTIVE_THROTTLE_FRAMES
     if (densityTick % throttleFrames === 0 || diff > TARGET_UPDATE_THRESHOLD) {
-      console.debug('generateMask in loop', { currentDensity: currentDensity.value, diff, isPointerActive, activityFactor })
       generateMask(currentDensity.value)
       densityTick = 0
     }
@@ -176,7 +172,6 @@ function startDensityLoop() {
     // stop animating shortly after movement stops
     if (!isPointerActive && now - lastMoveTime > movementKeepAlive) {
       // freeze at currentDensity; do a final gentle deterministic render
-      console.info('stopping density loop (inactive)', { currentDensity: currentDensity.value })
       generateMask(currentDensity.value, true)
       rafId = null
       return
@@ -186,7 +181,6 @@ function startDensityLoop() {
     if (diff > 0.00005 || isPointerActive) {
       rafId = requestAnimationFrame(step)
     } else {
-      console.debug('final generateMask', targetDensity.value)
       // force deterministic final render to avoid post-stop jitter
       generateMask(targetDensity.value, true)
       rafId = null
@@ -294,7 +288,6 @@ onMounted(() => {
       // update target density only; `currentDensity` will interpolate smoothly inside the loop
       targetDensity.value = mapped
       // info log for visibility
-      console.info('onPointerMove', { clientYInside, y, mapped })
       // ensure the loop is running to continue rendering while moving
       startDensityLoop()
     }
@@ -305,7 +298,6 @@ onMounted(() => {
       lastPointerY = null
       lastMoveTime = performance.now()
       // stopDensityLoop will be triggered by the loop when it detects inactivity
-      console.info('onPointerLeave — stopping active movement')
     }
 
     const onTouchMove = (e: TouchEvent) => {
@@ -345,7 +337,6 @@ onMounted(() => {
       isPointerActive = true
       activityFactor = Math.min(1, activityFactor + ACTIVITY_RAMP_UP)
       targetDensity.value = mapped
-      console.info('onTouchMove', { clientYInside, y, mapped })
       startDensityLoop()
     }
 
@@ -363,7 +354,6 @@ onMounted(() => {
       const clientYInside = ev.clientY - r.top
       const y = clamp(clientYInside / r.height)
       const mapped = y
-      console.info('onClick', { clientYInside, y, mapped })
       targetDensity.value = mapped
       generateMask(mapped, true)
       startDensityLoop()
@@ -410,7 +400,6 @@ onMounted(() => {
       isPointerActive = true
       activityFactor = Math.min(1, activityFactor + ACTIVITY_RAMP_UP)
       targetDensity.value = mapped
-      console.info('onWindowPointerMove', { clientYInside, y, mapped })
       startDensityLoop()
     }
 
@@ -452,14 +441,12 @@ onMounted(() => {
       isPointerActive = true
       activityFactor = Math.min(1, activityFactor + ACTIVITY_RAMP_UP)
       targetDensity.value = mapped
-      console.info('onWindowTouchMove', { clientYInside, y, mapped })
       startDensityLoop()
     }
 
     window.addEventListener('pointermove', onWindowPointerMove)
     window.addEventListener('touchmove', onWindowTouchMove)
 
-    console.debug('pointer/touch listeners attached')
 
     onUnmounted(() => {
       window.removeEventListener('resize', onResize)
@@ -549,7 +536,6 @@ function generateMask(density = 0.5, force = false) {
 
   // encode & set as CSS variable value (url(...))
   maskUrl.value = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`
-  console.info('generateMask (stripes)', { density, stripeWidth })
 
   // cache last generated mask so repeated calls with same density are no-ops
   lastMaskDensity = density

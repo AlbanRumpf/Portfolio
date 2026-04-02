@@ -94,10 +94,7 @@ function pushFromMaps(
     if (imageKey) {
       // With query: '?url', import: 'default', the value should be directly the URL string
       imageUrl = imgs[imageKey] as string
-      console.log('Image for', slug, ':', imageUrl, 'from key:', imageKey)
     } else {
-      console.log('No image found for', slug)
-      console.log('Available image keys:', Object.keys(imgs))
     }
 
     // Resolve optional audio snippet (only for soundworks when frontmatter.audio is present)
@@ -109,7 +106,6 @@ function pushFromMaps(
       if (audioKey) {
         audioUrl = audioMap[audioKey]
       }
-      console.log('Audio resolve', { slug, normalizedAudio, found: !!audioKey, keys: Object.keys(audioMap) })
     }
 
     cards.value.push({
@@ -293,12 +289,9 @@ const soundworkCards = computed(() => {
 })
 
 // Debug: log what cards we have
-console.log('All cards:', cards.value)
-console.log('Sidebar cards:', sidebarCards.value)
 
 // Watch for currentSlug changes to debug otherCard
 watch(currentSlug, () => {
-  console.log('Current slug changed to:', currentSlug.value)
 })
 
 // Track if detail panel is open
@@ -404,14 +397,10 @@ function drawVisualizer(canvas: HTMLCanvasElement, slug: string) {
 }
 
 function startVisualizer(slug: string) {
-  console.log('Starting visualizer for:', slug)
   const canvas = document.querySelector(`[data-visualizer="${slug}"]`) as HTMLCanvasElement
-  console.log('Canvas found:', canvas)
   if (canvas && analysers.value[slug]) {
-    console.log('Drawing visualizer')
     drawVisualizer(canvas, slug)
   } else {
-    console.log('Canvas or analyser not found', { canvas, analyser: analysers.value[slug] })
   }
 }
 
@@ -432,13 +421,10 @@ function stopVisualizer(slug: string) {
 function onAudioMounted(audioElement: HTMLAudioElement | null, slug: string) {
   if (!audioElement) return
   
-  console.log('Audio element mounted for:', slug)
   
   audioElement.addEventListener('play', () => {
-    console.log('Audio playing:', slug)
     setupAudioVisualizer(audioElement, slug)
     audioPlaying.value = { ...audioPlaying.value, [slug]: true }
-    console.log('audioPlaying state:', audioPlaying.value)
     // Use nextTick to ensure DOM is updated
     nextTick(() => {
       startVisualizer(slug)
@@ -446,13 +432,11 @@ function onAudioMounted(audioElement: HTMLAudioElement | null, slug: string) {
   })
   
   audioElement.addEventListener('pause', () => {
-    console.log('Audio paused:', slug)
     audioPlaying.value = { ...audioPlaying.value, [slug]: false }
     stopVisualizer(slug)
   })
   
   audioElement.addEventListener('ended', () => {
-    console.log('Audio ended:', slug)
     audioPlaying.value = { ...audioPlaying.value, [slug]: false }
     stopVisualizer(slug)
   })
