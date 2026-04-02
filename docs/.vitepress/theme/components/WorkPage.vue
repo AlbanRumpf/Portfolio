@@ -39,6 +39,22 @@ function pushFromMaps(
   audioMap: Record<string, string> | null,
   categoryKey: string
 ) {
+  const stripHtml = (value: string): string => value.replace(/<[^>]*>/g, '').trim()
+
+  const extractHtmlH1 = (raw: string): string | undefined => {
+    const match = raw.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
+    if (!match) return undefined
+    const cleaned = stripHtml(match[1])
+    return cleaned || undefined
+  }
+
+  const extractMarkdownH1 = (raw: string): string | undefined => {
+    const match = raw.match(/^#\s+(.+)$/m)
+    if (!match) return undefined
+    const cleaned = match[1].trim()
+    return cleaned || undefined
+  }
+
   const parseFrontmatter = (raw: string): Record<string, string> => {
     const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/)
     if (!m) return {}
@@ -56,7 +72,7 @@ function pushFromMaps(
     const lines = raw.split('\n')
     const fm = parseFrontmatter(raw)
 
-    const titleLine = lines.find(line => line.startsWith('# '))
+    const titleLine = lines.find(line => /^#\s+/.test(line))
     const nameLine = lines.find(line => line.startsWith('## '))
     const excerptLine = lines.find(line => line.trim() && !line.startsWith('#'))
 
@@ -99,7 +115,12 @@ function pushFromMaps(
     cards.value.push({
       category: categoryKey,
       slug,
-      title: frontmatter.title || titleLine?.replace(/^# /, '') || 'Untitled',
+      title:
+        frontmatter.title ||
+        extractHtmlH1(raw) ||
+        extractMarkdownH1(raw) ||
+        titleLine?.replace(/^#\s+/, '') ||
+        slug.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
       name: nameLine?.replace(/^## /, '') || '',
       excerpt: excerptLine || '',
       route,
