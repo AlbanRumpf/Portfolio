@@ -1,5 +1,5 @@
-# Deprived Extension (ongoing)
-## (2026)
+<h1 style="margin: 0 0 0.2rem 0;">Deprived Extension (ongoing)</h1>
+<p style="margin: 0 0 0.8rem 0; font-size: 1.1rem; opacity: 0.9;">(2026)</p>
 
 Arachnids have been roaming the planet for over 400 million years, with a
 new record breaking fossil just recently being found. Predating trees and
@@ -9,22 +9,19 @@ later evolving in the lineage of spiders roughly 300 million years ago,
 functions not only as a habitat, but as an extended sensory apparatus,
 distributing perception across ground and later air.
 
-<div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin: 0.9rem 0 1.1rem 0;">
-	<img src="./net1.jpg" alt="Network structure 1" style="width: min(440px, 100%); height: auto; display: block;" />
-	<img src="./net3.jpg" alt="Network structure 3" style="width: min(440px, 100%); height: auto; display: block;" />
+<div style="display: flex; gap: 1rem; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin: 0.9rem 0 1.1rem 0;">
+	<img src="./net1.jpg" alt="Network structure 1" style="height: min(320px, 42vw); width: auto; max-width: 100%; display: block; object-fit: contain;" />
+	<img src="./net3.jpg" alt="Network structure 3" style="height: min(320px, 42vw); width: auto; max-width: 100%; display: block; object-fit: contain;" />
 </div>
 
 Cartilaginous fishes such as sharks use the ampullae of Lorenzini to
 detect weak electromagnetic fields, supporting their means of navigation,
 communication, and locating mates, prey, and predators.
-
-<br>
-
-Can we take inspiration from these outsourced and different sensory
-systems and speculate on how they could shape imaginative
-extensions of semi-postbiological bodies in a dystopian future?
-
 <br><br>
+<em>Can we take inspiration from these outsourced and different sensory
+systems and speculate on how they could shape imaginative
+extensions of semi-postbiological bodies in a dystopian future?</em>
+<br>
 
 <div style="display: flex; gap: 1rem; align-items: stretch; margin: 1rem 0 0.9rem 0;">
 	<div style="flex: 0 0 62%; min-width: 0; display: flex; flex-direction: column; justify-content: space-between;">
@@ -59,12 +56,47 @@ change, converted into vibrational inputs underneath the mask.
 
 # Assembly process
 
-<div style="display: flex; gap: 0.75rem; justify-content: center; align-items: flex-end; flex-wrap: wrap; margin-top: 0.7rem;">
-	<img src="./wip1.jpg" alt="Work in progress 1" style="height: 240px; width: auto; display: block;" />
-	<img src="./wip2.jpg" alt="Work in progress 2" style="height: 240px; width: auto; display: block;" />
-	<img src="./wip3.jpg" alt="Work in progress 3" style="height: 240px; width: auto; display: block;" />
-	<img src="./wip4.jpg" alt="Work in progress 4" style="height: 240px; width: auto; display: block;" />
-	<img src="./wip5.jpg" alt="Work in progress 5" style="height: 240px; width: auto; display: block;" />
-	<img src="./wip6.jpg" alt="Work in progress 6" style="height: 240px; width: auto; display: block;" />
-	<img src="./wip7.jpg" alt="Work in progress 7" style="height: 240px; width: auto; display: block;" />
+<div style="display: flex; gap: 0.75rem; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin-top: 0.7rem;">
+	<div style="display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; width: fit-content;">
+		<div style="line-height: 0; width: 100%; display: flex; justify-content: center;">
+			<img src="./wip1.jpg" alt="Work in progress 1" style="height: 240px; width: auto; display: block; margin: 0; border: 1px solid #fff;" />
+		</div>
+		<div style="width: 1px; height: 24px; background: #fff; margin: 0;"></div>
+		<p style="margin: 0.08rem 0 0 0; font-size: 0.75rem; line-height: 1.15; color: #fff; text-align: left; width: 0; min-width: 100%; max-width: 100%; overflow-wrap: anywhere; word-break: break-word;">Foil release-layer</p>
+	</div>
+	<div style="display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; width: fit-content;">
+		<div style="line-height: 0; width: 100%; display: flex; justify-content: center;">
+			<img src="./wip3.jpg" alt="Work in progress 3" style="height: 240px; width: auto; display: block; margin: 0; border: 1px solid #fff;" />
+		</div>
+		<div style="width: 1px; height: 58px; background: #fff; margin: 0;"></div>
+		<p style="margin: 0.08rem 0 0 0; font-size: 0.75rem; line-height: 1.15; color: #fff; text-align: left; width: 0; min-width: 100%; max-width: 100%; overflow-wrap: anywhere; word-break: break-word;">Applying plaster bandages</p>
+	</div>
+	<div style="display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; width: fit-content;">
+		<div style="line-height: 0; width: 100%; display: flex; justify-content: center;">
+			<img src="./wip4.jpg" alt="Work in progress 4" style="height: 240px; width: auto; display: block; margin: 0; border: 1px solid #fff;" />
+		</div>
+		<div style="width: 1px; height: 24px; background: #fff; margin: 0;"></div>
+		<p style="margin: 0.08rem 0 0 0; font-size: 0.75rem; line-height: 1.15; color: #fff; text-align: left; width: 0; min-width: 100%; max-width: 100%; overflow-wrap: anywhere; word-break: break-word;">Removed and patched plaster frame</p>
+	</div>
+	<div style="display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; width: fit-content;">
+		<div style="line-height: 0; width: 100%; display: flex; justify-content: center;">
+			<img src="./wip5.jpg" alt="Work in progress 5" style="height: 240px; width: auto; display: block; margin: 0; border: 1px solid #fff;" />
+		</div>
+		<div style="width: 1px; height: 58px; background: #fff; margin: 0;"></div>
+		<p style="margin: 0.08rem 0 0 0; font-size: 0.75rem; line-height: 1.15; color: #fff; text-align: left; width: 0; min-width: 100%; max-width: 100%; overflow-wrap: anywhere; word-break: break-word;">Applying and cutting model foam</p>
+	</div>
+	<div style="display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; width: fit-content;">
+		<div style="line-height: 0; width: 100%; display: flex; justify-content: center;">
+			<img src="./wip6.jpg" alt="Work in progress 6" style="height: 240px; width: auto; display: block; margin: 0; border: 1px solid #fff;" />
+		</div>
+		<div style="width: 1px; height: 24px; background: #fff; margin: 0;"></div>
+		<p style="margin: 0.08rem 0 0 0; font-size: 0.75rem; line-height: 1.15; color: #fff; text-align: left; width: 0; min-width: 100%; max-width: 100%; overflow-wrap: anywhere; word-break: break-word;">mounting plates for circuit boards, glued on and integrated with cloth-tape.<br>Sealed with model plaster/glue</p>
+	</div>
+	<div style="display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; width: fit-content;">
+		<div style="line-height: 0; width: 100%; display: flex; justify-content: center;">
+			<img src="./wip7.jpg" alt="Work in progress 7" style="height: 240px; width: auto; display: block; margin: 0; border: 1px solid #fff;" />
+		</div>
+		<div style="width: 1px; height: 58px; background: #fff; margin: 0;"></div>
+		<p style="margin: 0.08rem 0 0 0; font-size: 0.75rem; line-height: 1.15; color: #fff; text-align: left; width: 0; min-width: 100%; max-width: 100%; overflow-wrap: anywhere; word-break: break-word;">Last plaster layer before final coating</p>
+	</div>
 </div>

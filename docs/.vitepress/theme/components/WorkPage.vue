@@ -257,9 +257,9 @@ function resolveImageUrl(url?: string | null): string {
 }
 
 const sidebarCards = computed(() => cards.value.filter(c => c.category === currentCategory.value))
-const otherCard = computed(() => {
+const otherCards = computed(() => {
   const categoryCards = sidebarCards.value
-  return categoryCards.find(c => c.slug !== currentSlug.value)
+  return categoryCards.filter(c => c.slug !== currentSlug.value)
 })
 const soundworkCards = computed(() => {
   const soundworks = cards.value.filter(c => c.category === 'soundworks')
@@ -282,18 +282,34 @@ watch(currentSlug, () => {
 
 // Track if detail panel is open
 const isPanelOpen = ref(false)
+const panelContent = ref<HTMLElement | null>(null)
+const panelScrolled = ref(false)
+
+function onPanelScroll() {
+  if (!panelContent.value) return
+  panelScrolled.value = panelContent.value.scrollTop > 1
+}
 
 // Open the detail panel
 function openPanel(slug: string, routePath: string) {
   currentSlug.value = slug
   isPanelOpen.value = true
+  panelScrolled.value = false
   // Update URL
   router.go(withBase(routePath))
+  // Scroll panel to top
+  nextTick(() => {
+    if (panelContent.value) {
+      panelContent.value.scrollTop = 0
+      panelScrolled.value = false
+    }
+  })
 }
 
 // Close the detail panel
 function closePanel() {
   isPanelOpen.value = false
+  panelScrolled.value = false
   currentSlug.value = undefined
   // Navigate back to the category page
   router.go(withBase(`/${currentCategory.value}/`))
@@ -522,7 +538,11 @@ onMounted(() => {
       <HorizontalImageGallery />
     </div>
 
-    <div v-if="currentCategory !== 'soundworks'" class="grid-responsive py-12">
+    <div
+      v-if="currentCategory !== 'soundworks'"
+      class="grid-responsive py-12 transition-opacity duration-300 ease-in-out"
+      :class="{ 'opacity-20 pointer-events-none': isPanelOpen }"
+    >
       <div
         v-for="card in sidebarCards"
         :key="card.category + '/' + card.slug"
@@ -558,20 +578,23 @@ onMounted(() => {
     </div>
 
     <!-- Slide-in Detail Panel -->
+    <Transition name="detail-overlay">
     <div
       v-if="isPanelOpen && currentCategory !== 'soundworks'"
-      class="fixed inset-0 z-[60] flex items-center justify-end"
+      class="fixed inset-x-0 bottom-0 top-[112px] z-[60] flex items-center justify-end"
       @click.self="closePanel"
     >
       <!-- Backdrop -->
       <div class="absolute inset-0 transition-opacity" style="background-color: #555a5e;" @click="closePanel"></div>
       
-      <!-- Left Side: Other Project Card -->
-      <div v-if="otherCard" class="absolute left-8 top-[30%] transform -translate-y-1/2 z-[70]">
+      <!-- Left Side: Other Project Cards -->
+      <div v-if="otherCards.length > 0" class="absolute left-8 top-1/2 transform -translate-y-1/2 z-[70] flex flex-col gap-4">
         <a
+          v-for="otherCard in otherCards"
+          :key="otherCard.slug"
           :href="withBase(otherCard.route)"
           @click.prevent="openPanel(otherCard.slug, otherCard.route)"
-          class="relative w-48 h-48 rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl block group"
+          class="relative w-48 h-48 rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl block group flex-shrink-0"
         >
           <!-- Cover Image -->
           <img
@@ -595,31 +618,37 @@ onMounted(() => {
       </div>
       
       <!-- Panel -->
-      <div class="relative h-full w-full md:w-3/4 lg:w-2/3 shadow-2xl overflow-y-auto transform transition-transform duration-300 ease-in-out" :style="{ backgroundColor: currentCategory === 'soundworks' ? '#373c40' : '#292c2f' }">
-        <!-- Panel Content -->
-        <div v-if="currentCard" class="p-8">
-          <!-- Cover Image -->
-          <div v-if="currentCard.image" class="mb-8">
-            <img
-              :src="resolveImageUrl(currentCard.image)"
-              alt="cover image"
-              class="w-full max-h-96 object-cover rounded-2xl"
-            />
+      <div ref="panelContent" @scroll.passive="onPanelScroll" class="detail-panel relative h-full w-full md:w-3/4 lg:w-2/3 rounded-tl-3xl shadow-2xl overflow-y-auto transform transition-transform duration-300 ease-in-out" :style="{ backgroundColor: currentCategory === 'soundworks' ? '#373c40' : '#292c2f' }">
+        <div class="detail-top-fade" :class="{ 'is-visible': panelScrolled }"></div>
+        <Transition name="detail-content" mode="out-in">
+          <div :key="currentCard?.slug || 'not-found'">
+            <!-- Panel Content -->
+            <div v-if="currentCard" class="p-8">
+              <!-- Cover Image -->
+              <div v-if="currentCard.image" class="mb-8">
+                <img
+                  :src="resolveImageUrl(currentCard.image)"
+                  alt="cover image"
+                  class="w-full max-h-96 object-cover rounded-2xl"
+                />
+              </div>
+
+              <!-- Markdown Content -->
+              <component
+                v-if="currentCard.component"
+                :is="currentCard.component"
+                class="prose prose-base md:prose-lg max-w-none prose-invert"
+              />
+            </div>
+
+            <div v-else class="p-8 text-gray-400">
+              Work not found.
+            </div>
           </div>
-
-          <!-- Markdown Content -->
-          <component
-            v-if="currentCard.component"
-            :is="currentCard.component"
-            class="prose prose-base md:prose-lg max-w-none prose-invert"
-          />
-        </div>
-
-        <div v-else class="p-8 text-gray-400">
-          Work not found.
-        </div>
+        </Transition>
       </div>
     </div>
+    </Transition>
   </div>
 </template>
 
@@ -645,6 +674,54 @@ onMounted(() => {
 /* Firefox audio player styling */
 .audio-player {
   background: #373c40 !important;
+}
+
+.detail-panel {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.detail-panel::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.detail-top-fade {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  margin-bottom: -36px;
+  pointer-events: none;
+  z-index: 15;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  background: linear-gradient(to bottom, rgba(41, 44, 47, 0.95) 0%, rgba(41, 44, 47, 0.75) 45%, rgba(41, 44, 47, 0) 100%);
+}
+
+.detail-top-fade.is-visible {
+  opacity: 1;
+}
+
+.detail-overlay-enter-active,
+.detail-overlay-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.detail-overlay-enter-from,
+.detail-overlay-leave-to {
+  opacity: 0;
+}
+
+.detail-content-enter-active,
+.detail-content-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.detail-content-enter-from,
+.detail-content-leave-to {
+  opacity: 0;
 }
 
 .fade-slide-enter-active,

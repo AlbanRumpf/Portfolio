@@ -1,5 +1,6 @@
-# Impacts
-## (2024)
+<h1 style="margin: 0 0 0.2rem 0;">Impacts</h1>
+<p style="margin: 0 0 0.8rem 0; font-size: 1.1rem; opacity: 0.9;">(2024)</p>
+
 
 
 

@@ -1,5 +1,5 @@
-# Hydropods 101
-## (2025)
+<h1 style="margin: 0 0 0.2rem 0;">Hydropods 101</h1>
+<p style="margin: 0 0 0.8rem 0; font-size: 1.1rem; opacity: 0.9;">(2025)</p>
 
 
 
@@ -7,9 +7,7 @@
 Hydropods is a series of structures made from assembled glass volumes and 
 tubes acting as experimental sound instruments that can be recorded and 
 performed. A vacuum pump transports liquid through the structure, guiding it 
-along intersections and into chambers of different sizes.
-<br><br>
-
+along intersections and into chambers of different sizes.<br>
 Varying pump intensity and combinations of possible airflow cause the liquid 
 to be dispersed and modulated incongruently within the system. 
 Its behaviour alternates between slowly creeping, swiftly flowing, and being 

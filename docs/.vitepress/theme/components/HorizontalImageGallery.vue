@@ -304,71 +304,74 @@ onUnmounted(() => {
 
 <template>
   <div v-if="images.length > 0" class="relative w-full">
-    <!-- Horizontal gallery view -->
-    <div
-      v-if="viewMode === 'gallery'"
-      ref="scrollContainer"
-      class="flex gap-6 overflow-x-auto"
-      style="scroll-behavior: auto;"
-    >
-      <div class="edge-spacer" :style="{ width: `${leftEdgeBuffer}px` }" aria-hidden="true"></div>
+    <Transition name="mode-fade" mode="out-in">
+      <!-- Horizontal gallery view -->
       <div
-        v-for="(image, index) in filteredImages"
-        :key="index"
-        class="flex-shrink-0 flex flex-col group"
-        :ref="(el) => setItemRef(index, filteredImages.length, el)"
-        @click="(e) => centerImage(e, image)"
+        v-if="viewMode === 'gallery'"
+        :key="`gallery-${selectedCategory}`"
+        ref="scrollContainer"
+        class="flex gap-6 overflow-x-auto"
+        style="scroll-behavior: auto;"
       >
-        <img
-          :src="image"
-          :alt="`Visual ${index + 1}`"
-          class="h-screen max-h-[600px] object-cover rounded-lg hover:scale-105 transition-transform duration-300 cursor-pointer mobile:max-h-[400px] tablet:max-h-[500px]"
-          @load="onImageLoad"
-        />
-        <!-- Metadata displayed underneath -->
-        <div class="mt-3 text-sm text-gray-700 text-center gallery-meta">
-          <p class="font-semibold text-gray-800 gallery-meta-title">{{ getMetadata(image)?.title || '\u00A0' }}</p>
-          <p class="text-gray-700 gallery-meta-line">{{ getMetadata(image)?.year || '\u00A0' }}</p>
-          <p class="text-gray-700 gallery-meta-line">{{ getMetadata(image)?.materials || '\u00A0' }}</p>
-          <p class="text-gray-700 gallery-meta-line">{{ getMetadata(image)?.dimensions || '\u00A0' }}</p>
-        </div>
-      </div>
-      <div class="edge-spacer" :style="{ width: `${rightEdgeBuffer}px` }" aria-hidden="true"></div>
-    </div>
-
-    <!-- Grid view -->
-    <div v-else class="gallery-grid-layout">
-      <TransitionGroup
-        name="grid-fade"
-        tag="div"
-        class="gallery-grid-wrapper"
-        :class="{
-          'grid-disable-move': disableGridMove,
-          'grid-use-absolute-leave': !disableGridMove
-        }"
-        @before-leave="onGridBeforeLeave"
-        @after-leave="onGridAfterLeave"
-      >
+        <div class="edge-spacer" :style="{ width: `${leftEdgeBuffer}px` }" aria-hidden="true"></div>
         <div
-          v-for="(image, index) in gridSortedImages"
-          :key="image"
-          class="gallery-grid-item group"
-          @click="openLightbox(image)"
+          v-for="(image, index) in filteredImages"
+          :key="index"
+          class="flex-shrink-0 flex flex-col group"
+          :ref="(el) => setItemRef(index, filteredImages.length, el)"
+          @click="(e) => centerImage(e, image)"
         >
           <img
             :src="image"
             :alt="`Visual ${index + 1}`"
-            class="gallery-grid-image"
+            class="h-screen max-h-[600px] object-cover rounded-lg hover:scale-105 transition-transform duration-300 cursor-pointer mobile:max-h-[400px] tablet:max-h-[500px]"
+            @load="onImageLoad"
           />
-          <div class="mt-3 text-sm text-gray-700 text-center gallery-meta gallery-grid-meta">
+          <!-- Metadata displayed underneath -->
+          <div class="mt-3 text-sm text-gray-700 text-center gallery-meta">
             <p class="font-semibold text-gray-800 gallery-meta-title">{{ getMetadata(image)?.title || '\u00A0' }}</p>
             <p class="text-gray-700 gallery-meta-line">{{ getMetadata(image)?.year || '\u00A0' }}</p>
             <p class="text-gray-700 gallery-meta-line">{{ getMetadata(image)?.materials || '\u00A0' }}</p>
             <p class="text-gray-700 gallery-meta-line">{{ getMetadata(image)?.dimensions || '\u00A0' }}</p>
           </div>
         </div>
-      </TransitionGroup>
-    </div>
+        <div class="edge-spacer" :style="{ width: `${rightEdgeBuffer}px` }" aria-hidden="true"></div>
+      </div>
+
+      <!-- Grid view -->
+      <div v-else key="grid" class="gallery-grid-layout">
+        <TransitionGroup
+          name="grid-fade"
+          tag="div"
+          class="gallery-grid-wrapper"
+          :class="{
+            'grid-disable-move': disableGridMove,
+            'grid-use-absolute-leave': !disableGridMove
+          }"
+          @before-leave="onGridBeforeLeave"
+          @after-leave="onGridAfterLeave"
+        >
+          <div
+            v-for="(image, index) in gridSortedImages"
+            :key="image"
+            class="gallery-grid-item group"
+            @click="openLightbox(image)"
+          >
+            <img
+              :src="image"
+              :alt="`Visual ${index + 1}`"
+              class="gallery-grid-image"
+            />
+            <div class="mt-3 text-sm text-gray-700 text-center gallery-meta gallery-grid-meta">
+              <p class="font-semibold text-gray-800 gallery-meta-title">{{ getMetadata(image)?.title || '\u00A0' }}</p>
+              <p class="text-gray-700 gallery-meta-line">{{ getMetadata(image)?.year || '\u00A0' }}</p>
+              <p class="text-gray-700 gallery-meta-line">{{ getMetadata(image)?.materials || '\u00A0' }}</p>
+              <p class="text-gray-700 gallery-meta-line">{{ getMetadata(image)?.dimensions || '\u00A0' }}</p>
+            </div>
+          </div>
+        </TransitionGroup>
+      </div>
+    </Transition>
 
     <div v-if="filteredImages.length === 0" class="py-10 text-center text-gray-400 text-sm">
       No images in this category yet.
@@ -454,6 +457,26 @@ onUnmounted(() => {
 }
 .lightbox-enter-from,
 .lightbox-leave-to {
+  opacity: 0;
+}
+
+.mode-fade-enter-active,
+.mode-fade-leave-active {
+  transition: opacity 0.28s ease;
+}
+
+.mode-fade-enter-from,
+.mode-fade-leave-to {
+  opacity: 0;
+}
+
+.gallery-category-fade-enter-active,
+.gallery-category-fade-leave-active {
+  transition: opacity 0.28s ease;
+}
+
+.gallery-category-fade-enter-from,
+.gallery-category-fade-leave-to {
   opacity: 0;
 }
 
