@@ -26,7 +26,7 @@ extensions of semi-postbiological bodies in a dystopian future?</em>
 <div style="display: flex; gap: 1rem; align-items: stretch; margin: 1rem 0 0.9rem 0;">
 	<div style="flex: 0 0 62%; min-width: 0; display: flex; flex-direction: column; justify-content: space-between;">
 		<p style="margin: 0; text-align: left;">
-			Deprived Extension is conceived as porous, high-impedance system.
+			Deprived Extension is conceived as a porous, high-impedance system.
 			A set of exposed antennas, functioning as distributed sensing elements,
 			extends into the environment, passively registering interference,
 			proximity, and movement. The signals, shaped through resistance and
