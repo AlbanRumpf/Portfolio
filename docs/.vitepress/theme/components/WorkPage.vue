@@ -14,6 +14,8 @@ type Card = {
   component: any
   year?: string
   audio?: string | null
+  info?: string | null
+  infoImages?: string[]
 }
 
 // Modules & raw markdowns per category
@@ -25,6 +27,7 @@ const mdModsSound = import.meta.glob('../../../soundworks/**/index.md', { eager:
 const mdRawSound = import.meta.glob('../../../soundworks/**/index.md', { query: '?raw', import: 'default', eager: true })
 const imgSound = import.meta.glob('../../../soundworks/**/cover.{jpg,jpeg,png,webp}', { eager: true, query: '?url', import: 'default' })
 const audioSound = import.meta.glob('../../../soundworks/**/{*.mp3,*.wav,*.ogg,*.m4a,*.flac}', { eager: true, query: '?url', import: 'default' })
+const detailImgSound = import.meta.glob('../../../soundworks/**/*.{jpg,jpeg,png,webp,avif,gif}', { eager: true, query: '?url', import: 'default' })
 
 const mdModsPaint = import.meta.glob('../../../paintings-sketches/**/index.md', { eager: true })
 const mdRawPaint = import.meta.glob('../../../paintings-sketches/**/index.md', { query: '?raw', import: 'default', eager: true })
@@ -59,10 +62,24 @@ function pushFromMaps(
     const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/)
     if (!m) return {}
     const out: Record<string, string> = {}
+    const normalizeFrontmatterValue = (value: string): string => {
+      let normalized = value.trim()
+
+      if (
+        (normalized.startsWith('"') && normalized.endsWith('"')) ||
+        (normalized.startsWith("'") && normalized.endsWith("'"))
+      ) {
+        normalized = normalized.slice(1, -1)
+      }
+
+      // Support escaped line breaks in plain frontmatter values.
+      return normalized.replace(/\\n/g, '\n')
+    }
+
     m[1].split(/\r?\n/).forEach(line => {
       const [k, ...rest] = line.split(':')
       if (!k || rest.length === 0) return
-      out[k.trim()] = rest.join(':').trim()
+      out[k.trim()] = normalizeFrontmatterValue(rest.join(':'))
     })
     return out
   }
@@ -108,6 +125,26 @@ function pushFromMaps(
       }
     }
 
+    // Resolve optional extra info content (only used by soundworks cards)
+    const infoText = typeof frontmatter.info === 'string' ? frontmatter.info : null
+    const infoImagesField = frontmatter.infoImages
+    const requestedInfoImages = Array.isArray(infoImagesField)
+      ? infoImagesField.filter((value: unknown): value is string => typeof value === 'string')
+      : typeof frontmatter.infoImage === 'string'
+        ? [frontmatter.infoImage]
+        : []
+    const infoImages = requestedInfoImages
+      .map((name) => {
+        const normalizedName = name.startsWith('./') ? name.slice(2) : name
+        const imageKey = Object.keys(detailImgSound).find(k =>
+          k.includes(`/${slug}/`) &&
+          !/\/cover\.(jpg|jpeg|png|webp)$/i.test(k) &&
+          k.endsWith(`/${normalizedName}`)
+        )
+        return imageKey ? (detailImgSound[imageKey] as string) : null
+      })
+      .filter((url): url is string => !!url)
+
     cards.value.push({
       category: categoryKey,
       slug,
@@ -123,7 +160,9 @@ function pushFromMaps(
       image: imageUrl,
       component: mod?.default || null,
       year: frontmatter.year || undefined,
-      audio: audioUrl
+      audio: audioUrl,
+      info: infoText,
+      infoImages
     })
   }
 }
@@ -154,6 +193,7 @@ const currentCategory = ref<string>(categoryFromPath())
 const currentSlug = ref<string | undefined>(cards.value.find(c => c.category === currentCategory.value)?.slug)
 const audioOpen = ref<Record<string, boolean>>({})
 const audioPlaying = ref<Record<string, boolean>>({})
+const infoOpen = ref<Record<string, boolean>>({})
 const showSoundworksContent = ref(currentCategory.value !== 'soundworks')
 let soundworksContentTimer: number | null = null
 const showInstallationsContent = ref(currentCategory.value !== 'installations')
@@ -333,6 +373,10 @@ function toggleAudio(slug: string) {
   audioOpen.value = { ...audioOpen.value, [slug]: !audioOpen.value[slug] }
 }
 
+function toggleInfo(slug: string) {
+  infoOpen.value = { ...infoOpen.value, [slug]: !infoOpen.value[slug] }
+}
+
 // Audio visualizer setup
 const audioContexts = ref<Record<string, AudioContext>>({})
 const analysers = ref<Record<string, AnalyserNode>>({})
@@ -480,14 +524,14 @@ onMounted(() => {
   <div class="relative">
     <!-- Soundworks: horizontal layout with audio players on the right -->
     <div v-if="currentCategory === 'soundworks'" class="soundworks-container" style="background-color: #373c40;">
-      <div v-if="showSoundworksContent" class="flex flex-col gap-6 py-12 soundworks-list">
+      <div v-if="showSoundworksContent" class="soundworks-list py-12">
         <div
           v-for="card in soundworkCards"
           :key="card.category + '/' + card.slug"
-          class="flex items-center gap-3 pb-5"
+          class="soundworks-row"
         >
         <!-- Left side: Work info and button -->
-        <div class="flex flex-col gap-2 flex-shrink-0" style="min-width: 300px;">
+        <div class="soundworks-meta flex flex-col gap-2 flex-shrink-0">
           <div class="text-white text-xl font-normal">{{ card.title }}</div>
           <div class="text-sm text-gray-300">{{ card.year || 'Year TBA' }}</div>
           <div v-if="card.audio" class="mt-1">
@@ -502,7 +546,19 @@ onMounted(() => {
               </Transition>
             </button>
           </div>
-          <div v-else class="text-gray-500 text-sm">Audio coming soon.</div>
+          <div class="mt-1">
+            <button
+              class="inline-flex items-center gap-2 px-0 py-0 text-sm text-gray-200 hover:text-white transition-colors relative"
+              style="border: none; background: transparent; padding-left: 0; min-width: 120px;"
+              @click="toggleInfo(card.slug)"
+            >
+              <Transition name="fade" mode="out-in">
+                <span v-if="!infoOpen[card.slug]" key="open-info">Open information</span>
+                <span v-else key="hide-info">Hide information</span>
+              </Transition>
+            </button>
+          </div>
+          <div v-if="!card.audio" class="text-gray-500 text-sm">Audio coming soon.</div>
         </div>
         
         <!-- Divider line / Visualizer between work info and player -->
@@ -532,6 +588,26 @@ onMounted(() => {
               controls 
               class="audio-player"
             ></audio>
+          </div>
+        </Transition>
+
+        <Transition name="expand-fade">
+          <div v-if="infoOpen[card.slug]" class="soundworks-info-panel">
+            <p v-if="card.info" class="soundworks-info-text">{{ card.info }}</p>
+
+            <div v-if="card.infoImages && card.infoImages.length" class="soundworks-info-images">
+              <img
+                v-for="(image, index) in card.infoImages"
+                :key="`${card.slug}-info-image-${index}`"
+                :src="resolveImageUrl(image)"
+                :alt="`${card.title} information image ${index + 1}`"
+                class="soundworks-info-image"
+              />
+            </div>
+
+            <p v-if="!card.info && (!card.infoImages || card.infoImages.length === 0)" class="soundworks-info-empty">
+              Information coming soon.
+            </p>
           </div>
         </Transition>
         </div>
@@ -658,6 +734,71 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.soundworks-container {
+  position: relative;
+  left: calc(50% - 50vw);
+  width: 100vw;
+  overflow-x: clip;
+  box-sizing: border-box;
+  padding: 0 clamp(1rem, 3vw, 2.5rem) 0 var(--nav-installations-left, 148px);
+}
+
+.soundworks-list {
+  animation: soundworksFadeIn 1.8s ease-out forwards;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.soundworks-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.soundworks-info-panel {
+  flex: 0 0 100%;
+  width: 100%;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.soundworks-info-text {
+  color: #e7e7e7;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+.soundworks-info-images {
+  margin-top: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.soundworks-info-image {
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  object-fit: cover;
+}
+
+.soundworks-info-empty {
+  color: #9ca3af;
+  font-size: 0.92rem;
+}
+
+.soundworks-meta {
+  min-width: 0;
+}
+
 .audio-player {
   width: 100%;
   max-width: 400px;
@@ -748,14 +889,47 @@ onMounted(() => {
   opacity: 0;
 }
 
-/* Soundworks list fade-in animation (keep background solid) */
-.soundworks-list {
-  animation: soundworksFadeIn 1.8s ease-out forwards;
+.expand-fade-enter-active,
+.expand-fade-leave-active {
+  transition: max-height 0.35s ease, opacity 0.3s ease, margin-top 0.35s ease;
+}
+
+.expand-fade-enter-from,
+.expand-fade-leave-to {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
+.expand-fade-enter-to,
+.expand-fade-leave-from {
+  max-height: 1200px;
+  opacity: 1;
+  margin-top: 0.15rem;
 }
 
 /* Installations cards fade-in animation */
 .installations-list {
   animation: installationsFadeIn 1.8s ease-out forwards;
+}
+
+@media (min-width: 768px) {
+  .soundworks-row {
+    flex-direction: row;
+    align-items: center;
+    align-content: flex-start;
+    gap: 0.75rem;
+  }
+
+  .soundworks-meta {
+    min-width: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .soundworks-container {
+    padding-left: var(--layout-gutter);
+  }
 }
 
 @keyframes installationsFadeIn {

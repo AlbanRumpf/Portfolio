@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { withBase } from 'vitepress'
 import ShapeBadge from './ShapeBadge.vue'
-import { ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 
 defineProps<{
   isVisualPage?: boolean
@@ -11,6 +11,17 @@ defineProps<{
 
 const navbarHovering = ref(false)
 const shapeRef = ref()
+const installationsLinkRef = ref<HTMLAnchorElement | null>(null)
+
+function updateInstallationsOffset() {
+  if (typeof document === 'undefined') return
+
+  const link = installationsLinkRef.value
+  if (!link) return
+
+  const left = Math.round(link.getBoundingClientRect().left)
+  document.documentElement.style.setProperty('--nav-installations-left', `${left}px`)
+}
 
 function goHome() {
   if (typeof window !== 'undefined') {
@@ -27,6 +38,17 @@ function onMenuMouseLeave() {
   navbarHovering.value = false
   shapeRef.value?.resetMotion?.()
 }
+
+onMounted(() => {
+  nextTick(() => {
+    updateInstallationsOffset()
+    window.addEventListener('resize', updateInstallationsOffset)
+  })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateInstallationsOffset)
+})
 </script>
 
 <template>
@@ -40,7 +62,7 @@ function onMenuMouseLeave() {
     <nav class="minimal-menu" @mousemove="onMenuMouseMove" @mouseleave="onMenuMouseLeave">
       <a :href="withBase('/about/')" class="menu-link">About</a>
       <a :href="withBase('/soundworks/')" class="menu-link">Sound</a>
-      <a :href="withBase('/installations/')" class="menu-link">Installations</a>
+      <a ref="installationsLinkRef" :href="withBase('/installations/')" class="menu-link">Installations</a>
       <a :href="withBase('/paintings-sketches/')" class="menu-link">Visual</a>
     </nav>
 

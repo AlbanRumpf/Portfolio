@@ -303,7 +303,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="images.length > 0" class="relative w-full">
+  <div v-if="images.length > 0" class="relative w-full gallery-root">
     <Transition name="mode-fade" mode="out-in">
       <!-- Horizontal gallery view -->
       <div
@@ -481,6 +481,11 @@ onUnmounted(() => {
 }
 
 /* Minimal category menu under gallery */
+.gallery-root {
+  --gallery-vertical-offset: 2.5rem;
+  margin-top: var(--gallery-vertical-offset);
+}
+
 .gallery-menu {
   margin-top: 1.5rem;
   display: flex;
@@ -537,9 +542,9 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: 1.5rem;
+  gap: 1.85rem;
   position: fixed;
-  top: 132px;
+  top: calc(132px + var(--gallery-vertical-offset, 1.1rem) + 0.4rem);
   left: 1rem;
   margin-left: 0;
   padding-left: 1rem;
@@ -550,10 +555,14 @@ onUnmounted(() => {
 
 /* Mobile: move menu to top and stack horizontally */
 @media (max-width: 768px) {
+  .gallery-root {
+    --gallery-vertical-offset: 0.75rem;
+  }
+
   .gallery-menu-vertical {
     position: static;
     margin-top: 1rem;
-    gap: 0.75rem;
+    gap: 0.95rem;
     left: auto;
     top: auto;
     width: 100%;

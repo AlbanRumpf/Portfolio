@@ -51,9 +51,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-row gap-12 min-h-[80vh] items-start text-white">
+  <div class="about-layout flex flex-row gap-12 min-h-[80vh] items-start text-white">
     <!-- Image on left -->
-    <div class="flex-shrink-0 pt-4 -ml-47 fade-in-image">
+    <div class="flex-shrink-0 pt-4 fade-in-image">
       <img :src="portraitImage" alt="Portrait" class="w-80 h-auto rounded-lg" />
     </div>
     
@@ -65,6 +65,23 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.about-layout {
+  --about-content-start: calc(
+    ((100vw - min(var(--layout-max-width), calc(100vw - (var(--layout-gutter) * 2)))) / 2)
+    + var(--layout-gutter)
+  );
+  --about-horizontal-offset: calc(
+    var(--nav-installations-left, var(--about-content-start)) - var(--about-content-start)
+  );
+  transform: translateX(var(--about-horizontal-offset));
+}
+
+@media (max-width: 768px) {
+  .about-layout {
+    transform: none;
+  }
+}
+
 .fade-in-image,
 .fade-in-content {
   animation: fadeIn 1.8s ease-out forwards;

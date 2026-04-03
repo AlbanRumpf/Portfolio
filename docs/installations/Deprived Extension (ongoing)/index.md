@@ -4,10 +4,10 @@
 Arachnids have been roaming the planet for over 400 million years, with a
 new record breaking fossil just recently being found. Predating trees and
 much of terrestrial fauna, they were amongst the first hunters
-of other arthropods on land.<br> The production of silk, a temporary architecture,
+of other arthropods on land.<br> The production of silk, a temporary architecture
 later evolving in the lineage of spiders roughly 300 million years ago,
-functions not only as a habitat, but as an extended sensory apparatus,
-distributing perception across ground and later air.
+functions not only as a habitat, but as an extended sensory apparatus that
+distributes perception across ground and later air.
 
 <div style="display: flex; gap: 1rem; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin: 0.9rem 0 1.1rem 0;">
 	<img src="./net1.jpg" alt="Network structure 1" style="height: min(320px, 42vw); width: auto; max-width: 100%; display: block; object-fit: contain;" />
@@ -48,7 +48,7 @@ extensions of semi-postbiological bodies in a dystopian future?</em>
 Instead of enhancing clarity, the system introduces a form of sensory
 deprivation and displacement, with vision and hearing being partially
 suspended, replaced by a diffuse, non-local perception of environmental
-change, converted into vibrational inputs underneath the mask.
+change, palpable through vibrational inputs underneath the mask.
 
 <div style="margin: 0.9rem 0 1.4rem 0; text-align: center;">
 	<img src="./4.jpg" alt="Deprived Extension image 4" style="width: min(880px, 100%); height: auto; display: inline-block;" />
