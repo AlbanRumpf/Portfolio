@@ -383,7 +383,7 @@ onUnmounted(() => {
         class="gallery-menu-link gallery-menu-toggle"
         @click="toggleViewMode"
       >
-        {{ viewMode === 'gallery' ? 'Grid view' : 'Gallery view' }}
+        {{ viewMode === 'gallery' ? 'Grid' : 'Gallery' }}
       </button>
       <button
         v-for="category in menuCategories"

@@ -204,7 +204,7 @@ onUnmounted(() => {
         <VideoWall ref="videoWallRef" />
         
         <!-- arrow fixed at bottom of viewport, only visible on homepage -->
-        <button ref="arrowButtonRef" @click="scrollToBelow" class="fixed left-1/2 transform -translate-x-1/2 z-40 bg-transparent p-2 arrow-button" style="bottom: 24px;" aria-label="Scroll down">
+        <button ref="arrowButtonRef" @click="scrollToBelow" class="fixed left-1/2 transform -translate-x-1/2 z-40 bg-transparent p-2 arrow-button" style="bottom: 14px;" aria-label="Scroll down">
           <svg class="w-10 h-10 text-white" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 5v14"></path>
             <path d="M19 12l-7 7-7-7"/>

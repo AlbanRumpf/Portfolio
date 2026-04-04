@@ -16,7 +16,10 @@ type Card = {
   audio?: string | null
   info?: string | null
   infoImages?: string[]
+  soundCategories?: SoundCategory[]
 }
+
+type SoundCategory = 'All' | 'Electroacoustic' | 'Instrumental' | 'Collaborative'
 
 // Modules & raw markdowns per category
 const mdModsInst = import.meta.glob('../../../installations/**/index.md', { eager: true })
@@ -34,6 +37,17 @@ const mdRawPaint = import.meta.glob('../../../paintings-sketches/**/index.md', {
 const imgPaint = import.meta.glob('../../../paintings-sketches/**/cover.{jpg,jpeg,png,webp}', { eager: true, query: '?url', import: 'default' })
 
 const cards = ref<Card[]>([])
+const soundMenuCategories: SoundCategory[] = ['All', 'Electroacoustic', 'Instrumental', 'Collaborative']
+
+function normalizeSoundCategory(raw?: string): SoundCategory | null {
+  const normalized = (raw || '').trim().toLowerCase()
+  if (!normalized) return null
+  if (normalized === 'all') return 'All'
+  if (normalized === 'electroacoustic') return 'Electroacoustic'
+  if (normalized === 'instrumental') return 'Instrumental'
+  if (normalized === 'collaborative') return 'Collaborative'
+  return null
+}
 
 function pushFromMaps(
   mods: Record<string, any>,
@@ -145,6 +159,20 @@ function pushFromMaps(
       })
       .filter((url): url is string => !!url)
 
+    const soundCategoriesRaw = frontmatter.soundCategories ?? frontmatter.soundCategory ?? frontmatter.category ?? frontmatter.type
+    const soundCategoryList = Array.isArray(soundCategoriesRaw)
+      ? soundCategoriesRaw
+      : typeof soundCategoriesRaw === 'string'
+        ? soundCategoriesRaw.split(',').map(v => v.trim()).filter(Boolean)
+        : []
+    const soundCategories = categoryKey === 'soundworks'
+      ? Array.from(new Set(
+          soundCategoryList
+            .map((value) => normalizeSoundCategory(String(value)))
+            .filter((value): value is SoundCategory => value !== null && value !== 'All')
+        ))
+      : []
+
     cards.value.push({
       category: categoryKey,
       slug,
@@ -162,7 +190,8 @@ function pushFromMaps(
       year: frontmatter.year || undefined,
       audio: audioUrl,
       info: infoText,
-      infoImages
+      infoImages,
+      soundCategories
     })
   }
 }
@@ -194,6 +223,7 @@ const currentSlug = ref<string | undefined>(cards.value.find(c => c.category ===
 const audioOpen = ref<Record<string, boolean>>({})
 const audioPlaying = ref<Record<string, boolean>>({})
 const infoOpen = ref<Record<string, boolean>>({})
+const soundSelectedCategory = ref<SoundCategory>('All')
 const showSoundworksContent = ref(currentCategory.value !== 'soundworks')
 let soundworksContentTimer: number | null = null
 const showInstallationsContent = ref(currentCategory.value !== 'installations')
@@ -319,9 +349,13 @@ const otherCards = computed(() => {
   return categoryCards.filter(c => c.slug !== currentSlug.value)
 })
 const soundworkCards = computed(() => {
-  const soundworks = cards.value.filter(c => c.category === 'soundworks')
+  const soundworks = cards.value.filter((c) => {
+    if (c.category !== 'soundworks') return false
+    if (soundSelectedCategory.value === 'All') return true
+    return (c.soundCategories || []).includes(soundSelectedCategory.value)
+  })
   // Sort by year descending (newest first, oldest last)
-  return soundworks.sort((a, b) => {
+  return [...soundworks].sort((a, b) => {
     const yearA = a.year ? parseInt(a.year) : 0
     const yearB = b.year ? parseInt(b.year) : 0
     return yearB - yearA // Descending order
@@ -375,6 +409,10 @@ function toggleAudio(slug: string) {
 
 function toggleInfo(slug: string) {
   infoOpen.value = { ...infoOpen.value, [slug]: !infoOpen.value[slug] }
+}
+
+function setSoundCategory(category: SoundCategory) {
+  soundSelectedCategory.value = category
 }
 
 // Audio visualizer setup
@@ -524,6 +562,25 @@ onMounted(() => {
   <div class="relative">
     <!-- Soundworks: horizontal layout with audio players on the right -->
     <div v-if="currentCategory === 'soundworks'" class="soundworks-container" style="background-color: #373c40;">
+      <nav v-if="showSoundworksContent" class="sound-menu sound-menu-vertical sound-menu-fade" aria-label="Soundworks options">
+        <button
+          type="button"
+          class="sound-menu-link sound-menu-toggle"
+        >
+          List
+        </button>
+        <button
+          v-for="menuCategory in soundMenuCategories"
+          :key="menuCategory"
+          type="button"
+          class="sound-menu-link sound-menu-category"
+          :class="{ 'is-active': soundSelectedCategory === menuCategory }"
+          @click="setSoundCategory(menuCategory)"
+        >
+          {{ menuCategory }}
+        </button>
+      </nav>
+
       <div v-if="showSoundworksContent" class="soundworks-list py-12">
         <div
           v-for="card in soundworkCards"
@@ -615,7 +672,7 @@ onMounted(() => {
     </div>
 
     <!-- Other categories: existing grid with detail panel -->
-    <div v-if="currentCategory === 'paintings-sketches' && showVisualContent" class="mb-12">
+    <div v-if="currentCategory === 'paintings-sketches' && showVisualContent" class="mb-12 visual-content-fade">
       <HorizontalImageGallery />
     </div>
 
@@ -741,6 +798,79 @@ onMounted(() => {
   overflow-x: clip;
   box-sizing: border-box;
   padding: 0 clamp(1rem, 3vw, 2.5rem) 0 var(--nav-installations-left, 148px);
+}
+
+.sound-menu {
+  display: flex;
+  justify-content: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.sound-menu-link {
+  font-family: inherit;
+  font-weight: 400;
+  color: inherit;
+  opacity: 0.7;
+  font-size: 0.95rem;
+  letter-spacing: normal;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.sound-menu-link:hover {
+  opacity: 1;
+}
+
+.sound-menu-link.is-active {
+  opacity: 1;
+}
+
+.sound-menu-category {
+  position: relative;
+  padding-bottom: 0.15rem;
+}
+
+.sound-menu-category.is-active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.12rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.75;
+}
+
+.sound-menu-toggle {
+  opacity: 1;
+  font-weight: 600;
+}
+
+.sound-menu-vertical {
+  margin-top: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1.5rem;
+  position: fixed;
+  top: calc(112px + var(--layout-vertical-pad) + 3rem);
+  left: 1rem;
+  margin-left: 0;
+  padding-left: 1rem;
+  transform: none;
+  width: max-content;
+  z-index: 20;
+}
+
+.sound-menu-fade {
+  animation: soundworksFadeIn 1.8s ease-out forwards;
 }
 
 .soundworks-list {
@@ -908,6 +1038,10 @@ onMounted(() => {
   margin-top: 0.15rem;
 }
 
+.visual-content-fade {
+  animation: visualFadeIn 1.8s ease-out forwards;
+}
+
 /* Installations cards fade-in animation */
 .installations-list {
   animation: installationsFadeIn 1.8s ease-out forwards;
@@ -927,6 +1061,19 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .sound-menu-vertical {
+    position: static;
+    margin-top: 1rem;
+    gap: 0.75rem;
+    left: auto;
+    top: auto;
+    width: 100%;
+    z-index: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-left: 0;
+  }
+
   .soundworks-container {
     padding-left: var(--layout-gutter);
   }
@@ -942,6 +1089,15 @@ onMounted(() => {
 }
 
 @keyframes soundworksFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes visualFadeIn {
   from {
     opacity: 0;
   }

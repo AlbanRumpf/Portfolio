@@ -42,6 +42,16 @@ body,
   overflow-x: clip;
 }
 
+/* Hide scrollbar globally while keeping scrolling functionality */
+html {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+html::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Opera */
+}
+
 :root {
   /* Desktop-first layout foundation */
   --layout-max-width: 72rem; /* matches previous max-w-6xl baseline */

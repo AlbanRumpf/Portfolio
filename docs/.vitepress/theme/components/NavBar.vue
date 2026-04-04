@@ -11,10 +11,17 @@ defineProps<{
 
 const navbarHovering = ref(false)
 const shapeRef = ref()
+const aboutLinkRef = ref<HTMLAnchorElement | null>(null)
 const installationsLinkRef = ref<HTMLAnchorElement | null>(null)
 
 function updateInstallationsOffset() {
   if (typeof document === 'undefined') return
+
+  const aboutLink = aboutLinkRef.value
+  if (aboutLink) {
+    const aboutLeft = Math.round(aboutLink.getBoundingClientRect().left)
+    document.documentElement.style.setProperty('--nav-about-left', `${aboutLeft}px`)
+  }
 
   const link = installationsLinkRef.value
   if (!link) return
@@ -60,7 +67,7 @@ onUnmounted(() => {
 
     <!-- minimal menu that appears next to the badge -->
     <nav class="minimal-menu" @mousemove="onMenuMouseMove" @mouseleave="onMenuMouseLeave">
-      <a :href="withBase('/about/')" class="menu-link">About</a>
+      <a ref="aboutLinkRef" :href="withBase('/about/')" class="menu-link">About</a>
       <a :href="withBase('/soundworks/')" class="menu-link">Sound</a>
       <a ref="installationsLinkRef" :href="withBase('/installations/')" class="menu-link">Installations</a>
       <a :href="withBase('/paintings-sketches/')" class="menu-link">Visual</a>
