@@ -59,6 +59,12 @@ const videoWallRef = ref<InstanceType<typeof VideoWall> | null>(null)
 const belowHeroRef = ref<HTMLElement | null>(null)
 const showScrollUpButton = ref(false)
 
+const isFinePointer = ref(false)
+const cursorX = ref(0)
+const cursorY = ref(0)
+const cursorVisible = ref(false)
+const cursorIsInteractive = ref(false)
+
 // whether to show the unlock screen (null = unknown during SSR, true = show unlock, false = show site)
 const showUnlock = ref<boolean | null>(null)
 
@@ -144,7 +150,32 @@ function updateArrowPosition() {
   videoWallRef.value.setArrowCenter(centerX, centerY)
 }
 
+function isInteractiveElement(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false
+  return Boolean(
+    target.closest(
+      'a, button, input, select, textarea, summary, label, [role="button"], [onclick], [tabindex]:not([tabindex="-1"]), .cursor-pointer'
+    )
+  )
+}
+
+function updateCursorState(event: MouseEvent) {
+  if (!isFinePointer.value) return
+  cursorX.value = event.clientX
+  cursorY.value = event.clientY
+  cursorVisible.value = true
+  cursorIsInteractive.value = isInteractiveElement(event.target)
+}
+
+function hideCursorDot(event: MouseEvent) {
+  if (event.relatedTarget === null) {
+    cursorVisible.value = false
+  }
+}
+
 onMounted(() => {
+  isFinePointer.value = window.matchMedia('(pointer: fine)').matches && window.matchMedia('(hover: hover)').matches
+
   // check initial state
   checkHeartbeatFresh()
 
@@ -166,6 +197,11 @@ onMounted(() => {
     window.addEventListener('resize', updateArrowPosition)
     window.addEventListener('scroll', updateArrowPosition)
     window.addEventListener('scroll', updateScrollUpVisibility)
+
+    if (isFinePointer.value) {
+      window.addEventListener('mousemove', updateCursorState)
+      window.addEventListener('mouseout', hideCursorDot)
+    }
   })
 })
 
@@ -180,6 +216,8 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateArrowPosition)
   window.removeEventListener('scroll', updateArrowPosition)
   window.removeEventListener('scroll', updateScrollUpVisibility)
+  window.removeEventListener('mousemove', updateCursorState)
+  window.removeEventListener('mouseout', hideCursorDot)
 })
 </script>
 
@@ -195,7 +233,16 @@ onUnmounted(() => {
   </div>
 
   <!-- Normal site chrome (NavBar + content) when unlocked -->
-  <div v-else :class="['layout-chrome', pageChromeClass]" :style="pageChromeStyle">
+  <div
+    v-else
+    :class="[
+      'layout-chrome',
+      pageChromeClass,
+      isVisualPage ? 'layout-chrome--visual' : 'layout-chrome--default',
+      { 'has-custom-dot-cursor': isFinePointer }
+    ]"
+    :style="pageChromeStyle"
+  >
     <NavBar :isVisualPage="isVisualPage" :isSoundworksPage="isSoundworksPage" :isInstallationsPage="isInstallationsPage" />
 
     <!-- full-bleed hero video for homepage (hidden until unlocked) -->
@@ -238,5 +285,42 @@ onUnmounted(() => {
         class="prose prose-base md:prose-lg lg:prose-xl max-w-none mt-8 prose-invert"
       />
     </main>
+
+    <div
+      v-if="isFinePointer && cursorVisible"
+      :class="['app-cursor-dot', { 'app-cursor-dot--interactive': cursorIsInteractive }]"
+      :style="{ left: `${cursorX}px`, top: `${cursorY}px` }"
+      aria-hidden="true"
+    />
   </div>
 </template>
+
+<style>
+.layout-chrome.has-custom-dot-cursor,
+.layout-chrome.has-custom-dot-cursor * {
+  cursor: none !important;
+}
+
+.app-cursor-dot {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #ffffff;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: center;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 220ms ease;
+}
+
+.app-cursor-dot--interactive {
+  transform: translate(-50%, -50%) scale(1.45);
+}
+
+.layout-chrome--visual .app-cursor-dot {
+  background: #000000;
+}
+</style>
