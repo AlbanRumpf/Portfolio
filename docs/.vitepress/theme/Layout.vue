@@ -57,7 +57,10 @@ const isHome = computed(() => frontmatter.value.layout === 'home' || normalizedP
 const arrowButtonRef = ref<HTMLElement | null>(null)
 const videoWallRef = ref<InstanceType<typeof VideoWall> | null>(null)
 const belowHeroRef = ref<HTMLElement | null>(null)
+const largeShapeRef = ref<InstanceType<typeof ShapeBadge> | null>(null)
 const showScrollUpButton = ref(false)
+const isBelowHeroInView = ref(false)
+let belowHeroObserver: IntersectionObserver | null = null
 
 const isFinePointer = ref(false)
 const cursorX = ref(0)
@@ -173,6 +176,21 @@ function hideCursorDot(event: MouseEvent) {
   }
 }
 
+function updateLargeShapeTracking(event: MouseEvent) {
+  if (!isHome.value || !isBelowHeroInView.value) return
+  largeShapeRef.value?.updateMouseFromEvent?.(event)
+}
+
+function stopLargeShapeTracking() {
+  largeShapeRef.value?.resetMotion?.()
+}
+
+function handleLargeShapeMouseOut(event: MouseEvent) {
+  if (event.relatedTarget === null) {
+    stopLargeShapeTracking()
+  }
+}
+
 onMounted(() => {
   isFinePointer.value = window.matchMedia('(pointer: fine)').matches && window.matchMedia('(hover: hover)').matches
 
@@ -198,6 +216,25 @@ onMounted(() => {
     window.addEventListener('scroll', updateArrowPosition)
     window.addEventListener('scroll', updateScrollUpVisibility)
 
+    if (belowHeroRef.value) {
+      belowHeroObserver = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0]
+          isBelowHeroInView.value = !!entry?.isIntersecting
+          if (!isBelowHeroInView.value) {
+            stopLargeShapeTracking()
+          }
+        },
+        {
+          threshold: 0.45,
+        }
+      )
+      belowHeroObserver.observe(belowHeroRef.value)
+    }
+
+    window.addEventListener('mousemove', updateLargeShapeTracking)
+    window.addEventListener('mouseout', handleLargeShapeMouseOut)
+
     if (isFinePointer.value) {
       window.addEventListener('mousemove', updateCursorState)
       window.addEventListener('mouseout', hideCursorDot)
@@ -216,6 +253,12 @@ onUnmounted(() => {
   window.removeEventListener('resize', updateArrowPosition)
   window.removeEventListener('scroll', updateArrowPosition)
   window.removeEventListener('scroll', updateScrollUpVisibility)
+  window.removeEventListener('mousemove', updateLargeShapeTracking)
+  window.removeEventListener('mouseout', handleLargeShapeMouseOut)
+  if (belowHeroObserver) {
+    belowHeroObserver.disconnect()
+    belowHeroObserver = null
+  }
   window.removeEventListener('mousemove', updateCursorState)
   window.removeEventListener('mouseout', hideCursorDot)
 })
@@ -262,7 +305,7 @@ onUnmounted(() => {
       <!-- content below the hero; the arrow scrolls to this area -->
       <div id="below-hero" ref="belowHeroRef" class="below-hero layout-section-pad flex flex-col items-center justify-center gap-8" style="min-height: 100vh; position: relative;">
         <!-- Large interactive shape (no hover effects, just cursor tracking) -->
-        <ShapeBadge :isVisualPage="isVisualPage" :disableHoverEffects="true" :scale="8" :strokeWidth="1.5" :disableCycling="true" :showBackgroundLayers="true" :showHoverText="true" />
+        <ShapeBadge ref="largeShapeRef" :isVisualPage="isVisualPage" :disableHoverEffects="true" :scale="8" :strokeWidth="1.5" :disableCycling="true" :showBackgroundLayers="true" :showHoverText="true" :viewportTracking="true" />
         
         <!-- scroll up button that appears at top when scrolled down -->
         <button v-if="showScrollUpButton" @click="scrollToTop" class="fixed left-1/2 transform -translate-x-1/2 z-40 bg-transparent p-2 arrow-button" style="top: 24px; transition: opacity 0.3s ease;" aria-label="Scroll up">

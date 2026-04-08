@@ -1,13 +1,13 @@
 <template>
-  <div class="shape-badge-container">
+  <div ref="containerEl" class="shape-badge-container">
     <button 
       class="shape-badge" 
       :class="{ 'shape-badge-expanded': props.scale && props.scale > 2 }"
       role="button" 
       aria-label="Open navigation menu" 
       @click="$emit('toggle')"
-      @mousemove="onMouseMove"
-      @mouseleave="onMouseLeave"
+      @mousemove="onLocalMouseMove"
+      @mouseleave="onLocalMouseLeave"
       ref="badgeEl"
       :style="{ width: `${88 * (props.scale || 1)}px`, height: `${88 * (props.scale || 1)}px` }"
     >
@@ -83,15 +83,15 @@
     </button>
     
     <!-- Hover labels (only shown when showHoverText prop is true) -->
-    <div v-if="props.showHoverText" class="hover-labels-container">
-      <div class="hover-label hover-label-left" :class="{ 'is-visible': isHovering }" :style="getHoverLabelStyle(0)">You did this</div>
-      <div class="hover-label hover-label-right" :class="{ 'is-visible': isHovering }" :style="getHoverLabelStyle(1)">{{ currentFollowUpWord }}</div>
+    <div v-if="props.showHoverText" class="hover-labels-container" :class="{ 'is-vertical': useVerticalHoverLabels }">
+      <div ref="leftLabelEl" class="hover-label hover-label-left" :class="{ 'is-visible': isHovering }" :style="getCombinedHoverLabelStyle(0)">You did this</div>
+      <div ref="rightLabelEl" class="hover-label hover-label-right" :class="{ 'is-visible': isHovering }" :style="getCombinedHoverLabelStyle(1)">{{ currentFollowUpWord }}</div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { getLastDrawnPattern } from './Unlock.vue'
 
 const props = defineProps<{
@@ -104,9 +104,11 @@ const props = defineProps<{
   disableCycling?: boolean
   showBackgroundLayers?: boolean
   showHoverText?: boolean
+  viewportTracking?: boolean
 }>()
 
 const points = ref<number[]>([])
+const containerEl = ref<HTMLElement | null>(null)
 const badgeEl = ref<HTMLElement | null>(null)
 const mouseX = ref(0)
 const mouseY = ref(0)
@@ -115,6 +117,11 @@ const smoothMouseY = ref(0)
 const isHovering = ref(false)
 const isRetracted = ref(false)
 const showText = ref(false)
+const leftLabelEl = ref<HTMLElement | null>(null)
+const rightLabelEl = ref<HTMLElement | null>(null)
+const useVerticalHoverLabels = ref(false)
+const topVerticalLabelStyle = ref<Record<string, string>>({})
+const bottomVerticalLabelStyle = ref<Record<string, string>>({})
 const strokeWidth = ref(props.strokeWidth ?? 6)
 const offsetBack = { x: -3, y: 3 }
 const offsetFront = { x: 2, y: -2 }
@@ -122,9 +129,11 @@ const offsetFront = { x: 2, y: -2 }
 // Hover text animation
 const followUpWords = ['kinda...', 'somewhat...', 'partially...', 'sorta...', 'more or less...',  'somehow...', 'or did you...', 'in conjunction with...', 'but...', 'also...', 'depending on your definition of...', 'arguably...', 'on some level...', 'maybe...', 'to an extend...', 'in a way...']
 const currentFollowUpWord = ref(followUpWords[0])
+const followUpWordQueue = ref<string[]>([])
 let followUpWordTimeoutId: ReturnType<typeof setTimeout> | null = null
 
 let animationFrameId: number | null = null
+let hoverLayoutRafId: number | null = null
 let retractionTimeoutId: ReturnType<typeof setTimeout> | null = null
 let textDisplayTimeoutId: ReturnType<typeof setTimeout> | null = null
 const RETRACTION_DELAY = 10000 // 10 seconds before shape switches to text 
@@ -202,8 +211,8 @@ function onMouseMove(e: MouseEvent) {
   updateMouse(e)
   
   // Start follow-up word rotation on first hover
-  if (props.showHoverText && isHovering.value && !followUpWordTimeoutId) {
-    scheduleFollowUpWordChange()
+  if (props.showHoverText && isHovering.value) {
+    ensureFollowUpWordRotation()
   }
 }
 
@@ -275,7 +284,20 @@ function updateMouse(e: MouseEvent) {
   const centerY = rect.top + rect.height / 2
   mouseX.value = (e.clientX - centerX) / (rect.width / 2)
   mouseY.value = (e.clientY - centerY) / (rect.height / 2)
+  if (props.showHoverText) {
+    ensureFollowUpWordRotation()
+  }
   if (animationFrameId === null) smoothMousePosition()
+}
+
+function onLocalMouseMove(e: MouseEvent) {
+  if (props.viewportTracking) return
+  onMouseMove(e)
+}
+
+function onLocalMouseLeave() {
+  if (props.viewportTracking) return
+  onMouseLeave()
 }
 
 function resetMotion() {
@@ -484,17 +506,61 @@ function onStorage(e: StorageEvent) {
   if (e.key === 'unlockPattern') loadPattern()
 }
 
+function shuffledWords(words: string[]): string[] {
+  const arr = [...words]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+function refillFollowUpWordQueue() {
+  if (followUpWords.length === 0) {
+    followUpWordQueue.value = []
+    return
+  }
+
+  let nextBatch = shuffledWords(followUpWords)
+
+  // Avoid immediate repeat at cycle boundaries when possible.
+  if (nextBatch.length > 1 && nextBatch[0] === currentFollowUpWord.value) {
+    nextBatch = shuffledWords(followUpWords)
+    if (nextBatch[0] === currentFollowUpWord.value) {
+      const swapIndex = nextBatch.findIndex(word => word !== currentFollowUpWord.value)
+      if (swapIndex > 0) {
+        ;[nextBatch[0], nextBatch[swapIndex]] = [nextBatch[swapIndex], nextBatch[0]]
+      }
+    }
+  }
+
+  followUpWordQueue.value = nextBatch
+}
+
+function nextFollowUpWord(): string {
+  if (followUpWordQueue.value.length === 0) {
+    refillFollowUpWordQueue()
+  }
+  return followUpWordQueue.value.shift() ?? currentFollowUpWord.value
+}
+
+function ensureFollowUpWordRotation() {
+  if (!props.showHoverText || followUpWordTimeoutId !== null) return
+  currentFollowUpWord.value = nextFollowUpWord()
+  scheduleFollowUpWordChange()
+}
+
 function scheduleFollowUpWordChange() {
   if (followUpWordTimeoutId !== null) {
     clearTimeout(followUpWordTimeoutId)
   }
   followUpWordTimeoutId = setTimeout(() => {
-    const currentIndex = followUpWords.indexOf(currentFollowUpWord.value)
-    const nextIndex = (currentIndex + 1) % followUpWords.length
-    currentFollowUpWord.value = followUpWords[nextIndex]
+    currentFollowUpWord.value = nextFollowUpWord()
     // Schedule next change
     if (isHovering.value && props.showHoverText) {
       scheduleFollowUpWordChange()
+    } else {
+      followUpWordTimeoutId = null
     }
   }, 1200) // Change word every 1.2 seconds
 }
@@ -505,6 +571,103 @@ function getHoverLabelStyle(index: number) {
   return {
     animationDelay: `${delay}s`,
   }
+}
+
+function getCombinedHoverLabelStyle(index: number) {
+  const baseStyle = getHoverLabelStyle(index)
+  if (!useVerticalHoverLabels.value) return baseStyle
+  return {
+    ...baseStyle,
+    ...(index === 0 ? topVerticalLabelStyle.value : bottomVerticalLabelStyle.value),
+  }
+}
+
+function getArrowBounds() {
+  const topArrow = document.querySelector('button[aria-label="Scroll up"]') as HTMLElement | null
+  const bottomArrow = document.querySelector('button[aria-label="Scroll down"]') as HTMLElement | null
+
+  const viewportTop = 0
+  const viewportBottom = window.innerHeight
+  const topBound = topArrow ? topArrow.getBoundingClientRect().bottom + 12 : viewportTop + 12
+  const bottomBound = bottomArrow ? bottomArrow.getBoundingClientRect().top - 12 : viewportBottom - 12
+
+  return { topBound, bottomBound }
+}
+
+function updateVerticalLabelPositions() {
+  if (!containerEl.value || !badgeEl.value || !leftLabelEl.value || !rightLabelEl.value) return
+
+  const containerRect = containerEl.value.getBoundingClientRect()
+  const shapeRect = badgeEl.value.getBoundingClientRect()
+  const leftRect = leftLabelEl.value.getBoundingClientRect()
+  const rightRect = rightLabelEl.value.getBoundingClientRect()
+  const { topBound, bottomBound } = getArrowBounds()
+  const gap = 16
+
+  let topLabelY = shapeRect.top - leftRect.height - gap
+  let bottomLabelY = shapeRect.bottom + gap
+
+  topLabelY = Math.max(topBound, topLabelY)
+  bottomLabelY = Math.min(bottomBound - rightRect.height, bottomLabelY)
+
+  if (topLabelY + leftRect.height + 8 > bottomLabelY) {
+    topLabelY = Math.max(topBound, shapeRect.top - leftRect.height - 8)
+    bottomLabelY = Math.min(bottomBound - rightRect.height, shapeRect.bottom + 8)
+  }
+
+  topVerticalLabelStyle.value = {
+    top: `${Math.round(topLabelY - containerRect.top)}px`,
+    transform: 'translateX(-50%)',
+  }
+
+  bottomVerticalLabelStyle.value = {
+    top: `${Math.round(bottomLabelY - containerRect.top)}px`,
+    transform: 'translateX(-50%)',
+  }
+}
+
+async function updateHoverLabelLayoutMode() {
+  if (!props.showHoverText) return
+  if (!leftLabelEl.value || !rightLabelEl.value || !containerEl.value) return
+
+  if (useVerticalHoverLabels.value) {
+    useVerticalHoverLabels.value = false
+    await nextTick()
+    if (!leftLabelEl.value || !rightLabelEl.value) return
+  }
+
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight
+  const margin = 8
+  const leftRect = leftLabelEl.value.getBoundingClientRect()
+  const rightRect = rightLabelEl.value.getBoundingClientRect()
+
+  const isClipped = [leftRect, rightRect].some((rect) => (
+    rect.left < margin ||
+    rect.right > viewportWidth - margin ||
+    rect.top < margin ||
+    rect.bottom > viewportHeight - margin
+  ))
+
+  useVerticalHoverLabels.value = isClipped
+  if (useVerticalHoverLabels.value) {
+    await nextTick()
+    updateVerticalLabelPositions()
+  } else {
+    topVerticalLabelStyle.value = {}
+    bottomVerticalLabelStyle.value = {}
+  }
+}
+
+function scheduleHoverLabelLayoutCheck() {
+  if (typeof window === 'undefined') return
+  if (hoverLayoutRafId !== null) {
+    cancelAnimationFrame(hoverLayoutRafId)
+  }
+  hoverLayoutRafId = requestAnimationFrame(() => {
+    hoverLayoutRafId = null
+    updateHoverLabelLayoutMode()
+  })
 }
 
 // Restore shape when menu closes
@@ -525,6 +688,30 @@ watch(() => props.navbarHovering, (navbarHovering) => {
     resetToInitialState()
     // Restart the cycle when navbar hover ends
     scheduleRetraction()
+  }
+})
+
+watch(() => isHovering.value, (hovering) => {
+  if (hovering) {
+    scheduleHoverLabelLayoutCheck()
+  }
+})
+
+watch(() => currentFollowUpWord.value, () => {
+  scheduleHoverLabelLayoutCheck()
+})
+
+watch(() => props.scale, () => {
+  scheduleHoverLabelLayoutCheck()
+})
+
+watch(() => props.showHoverText, () => {
+  scheduleHoverLabelLayoutCheck()
+})
+
+watch(() => useVerticalHoverLabels.value, (isVertical) => {
+  if (isVertical) {
+    scheduleHoverLabelLayoutCheck()
   }
 })
 
@@ -549,15 +736,26 @@ function resetToInitialState() {
 onMounted(() => {
   loadPattern()
   window.addEventListener('storage', onStorage)
+  window.addEventListener('resize', scheduleHoverLabelLayoutCheck)
+  window.addEventListener('scroll', scheduleHoverLabelLayoutCheck, { passive: true })
   // Ensure clean initial state
   resetToInitialState()
   // Start the automatic shape/text switching cycle (unless disabled)
   if (!props.disableCycling) {
     scheduleRetraction()
   }
+  nextTick(() => {
+    scheduleHoverLabelLayoutCheck()
+  })
 })
 onUnmounted(() => {
   window.removeEventListener('storage', onStorage)
+  window.removeEventListener('resize', scheduleHoverLabelLayoutCheck)
+  window.removeEventListener('scroll', scheduleHoverLabelLayoutCheck)
+  if (hoverLayoutRafId !== null) {
+    cancelAnimationFrame(hoverLayoutRafId)
+    hoverLayoutRafId = null
+  }
   resetMotion()
   // Clean up timers
   if (retractionTimeoutId !== null) {
@@ -618,6 +816,7 @@ defineExpose({
   height: 64px;
   perspective: 260px; /* stronger parallax */
   perspective-origin: 50% 40%;
+  overflow: visible;
 }
 
 .shape-3d-container {
@@ -626,6 +825,7 @@ defineExpose({
   height: 100%;
   transform-style: preserve-3d;
   transition: opacity 800ms ease-out, transform 800ms ease-out, filter 300ms ease;
+  overflow: visible;
 }
 
 .shape-3d-container.is-retracted {
@@ -648,6 +848,12 @@ defineExpose({
   transform-origin: 50% 50%;
   backface-visibility: visible;
   transition: opacity 300ms ease, transform 300ms ease;
+  overflow: visible;
+}
+
+.shape-layer svg,
+.shape-layer {
+  overflow: visible;
 }
 
 .layer-perspective {
@@ -814,5 +1020,43 @@ defineExpose({
   right: -15%;
   top: 80%;
   transform: translateX(100%) translateY(-50%);
+}
+
+.hover-labels-container.is-vertical .hover-label {
+  left: 50%;
+  right: auto;
+  text-align: center;
+  max-width: min(92vw, 32rem);
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.hover-labels-container.is-vertical .hover-label-left {
+  transform: translateX(-50%);
+}
+
+.hover-labels-container.is-vertical .hover-label-right {
+  transform: translateX(-50%);
+}
+
+@media (max-width: 900px) {
+  .hover-label {
+    left: 50%;
+    right: auto;
+    text-align: center;
+    max-width: min(92vw, 32rem);
+    white-space: normal;
+    line-height: 1.2;
+  }
+
+  .hover-label-left {
+    top: -1.4rem;
+    transform: translateX(-50%) translateY(-100%);
+  }
+
+  .hover-label-right {
+    top: calc(100% + 1.4rem);
+    transform: translateX(-50%) translateY(0);
+  }
 }
 </style>

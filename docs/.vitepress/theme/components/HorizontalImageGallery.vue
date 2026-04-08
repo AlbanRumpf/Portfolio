@@ -59,6 +59,10 @@ const CATEGORY_ORDER: RealGalleryCategory[] = ['Sketchbooks', 'Drawings', 'Colla
 const UNCATEGORIZED_ORDER = CATEGORY_ORDER.length
 
 const scrollContainer = ref<HTMLElement | null>(null)
+const galleryRootEl = ref<HTMLElement | null>(null)
+const menuEl = ref<HTMLElement | null>(null)
+const galleryViewEl = ref<HTMLElement | null>(null)
+const gridViewEl = ref<HTMLElement | null>(null)
 const lightboxImage = ref<string | null>(null)
 const lightboxVisible = ref(false)
 const firstItemEl = ref<HTMLElement | null>(null)
@@ -67,7 +71,17 @@ const leftEdgeBuffer = ref(16)
 const rightEdgeBuffer = ref(16)
 const didInitialCenter = ref(false)
 const disableGridMove = ref(false)
+const forceHorizontalMenu = ref(false)
+const hasUserStoppedAutoScroll = ref(false)
 let gridMoveResetTimer: ReturnType<typeof setTimeout> | null = null
+let menuLayoutRaf: number | null = null
+let autoScrollRaf: number | null = null
+let autoScrollStartTimer: ReturnType<typeof setTimeout> | null = null
+let autoScrollDirection = 1
+let autoScrollLastTs = 0
+let autoScrollPosition = 0
+
+const AUTO_SCROLL_SPEED = 22 // pixels per second
 
 // Get metadata for an image by filename
 function getMetadata(imagePath: string): ImageMeta | null {
@@ -133,6 +147,12 @@ function setItemRef(index: number, total: number, el: unknown) {
   if (index === total - 1) lastItemEl.value = htmlEl
 }
 
+function setGalleryViewRef(el: unknown) {
+  const htmlEl = el instanceof HTMLElement ? el : null
+  scrollContainer.value = htmlEl
+  galleryViewEl.value = htmlEl
+}
+
 function updateEdgeBuffers() {
   const container = scrollContainer.value
   const first = firstItemEl.value
@@ -174,6 +194,8 @@ function smoothScrollBy(container: HTMLElement, distance: number, duration: numb
 const CENTER_THRESHOLD = 80
 
 function centerImage(event: MouseEvent, image: string) {
+  stopAutoScrollByUserIntent()
+
   const container = scrollContainer.value
   const target = (event.currentTarget as HTMLElement)
   if (!container || !target) return
@@ -202,6 +224,7 @@ function closeLightbox() {
 }
 
 function setCategory(category: GalleryCategory) {
+  stopAutoScrollByUserIntent()
   selectedCategory.value = category
   closeLightbox()
   if (viewMode.value === 'gallery' && scrollContainer.value) {
@@ -213,6 +236,7 @@ function setCategory(category: GalleryCategory) {
 }
 
 function toggleViewMode() {
+  stopAutoScrollByUserIntent()
   viewMode.value = viewMode.value === 'gallery' ? 'grid' : 'gallery'
   closeLightbox()
 
@@ -243,11 +267,92 @@ function onKeyDown(e: KeyboardEvent) {
 
 function onResize() {
   updateEdgeBuffers()
+  scheduleMenuLayoutUpdate()
+}
+
+function stopAutoScroll() {
+  if (autoScrollStartTimer !== null) {
+    clearTimeout(autoScrollStartTimer)
+    autoScrollStartTimer = null
+  }
+  if (autoScrollRaf !== null) {
+    cancelAnimationFrame(autoScrollRaf)
+    autoScrollRaf = null
+  }
+  autoScrollLastTs = 0
+  autoScrollPosition = 0
+}
+
+function stopAutoScrollByUserIntent() {
+  hasUserStoppedAutoScroll.value = true
+  stopAutoScroll()
+}
+
+function onGalleryUserIntent() {
+  stopAutoScrollByUserIntent()
+}
+
+function runAutoScroll(ts: number) {
+  const container = scrollContainer.value
+  if (!container || viewMode.value !== 'gallery' || hasUserStoppedAutoScroll.value) {
+    stopAutoScroll()
+    return
+  }
+
+  const maxScroll = container.scrollWidth - container.clientWidth
+  if (maxScroll <= 0) {
+    autoScrollRaf = requestAnimationFrame(runAutoScroll)
+    return
+  }
+
+  if (autoScrollLastTs === 0) {
+    autoScrollLastTs = ts
+    autoScrollPosition = container.scrollLeft
+  }
+
+  const dt = Math.max(0, ts - autoScrollLastTs)
+  autoScrollLastTs = ts
+
+  let nextScrollLeft = autoScrollPosition + autoScrollDirection * (AUTO_SCROLL_SPEED * dt / 1000)
+
+  if (nextScrollLeft >= maxScroll) {
+    nextScrollLeft = maxScroll
+    autoScrollDirection = -1
+  } else if (nextScrollLeft <= 0) {
+    nextScrollLeft = 0
+    autoScrollDirection = 1
+  }
+
+  autoScrollPosition = nextScrollLeft
+  container.scrollLeft = nextScrollLeft
+  autoScrollRaf = requestAnimationFrame(runAutoScroll)
+}
+
+function startAutoScrollIfEligible() {
+  if (viewMode.value !== 'gallery' || hasUserStoppedAutoScroll.value) return
+  if (!scrollContainer.value) return
+  if (autoScrollRaf !== null) return
+  autoScrollDirection = 1
+  autoScrollLastTs = 0
+  autoScrollRaf = requestAnimationFrame(runAutoScroll)
+}
+
+function scheduleAutoScrollStart(delayMs = 700) {
+  if (viewMode.value !== 'gallery' || hasUserStoppedAutoScroll.value) return
+  if (autoScrollStartTimer !== null) {
+    clearTimeout(autoScrollStartTimer)
+  }
+  autoScrollStartTimer = setTimeout(() => {
+    autoScrollStartTimer = null
+    startAutoScrollIfEligible()
+  }, delayMs)
 }
 
 function onImageLoad() {
   nextTick(() => {
     updateEdgeBuffers()
+    scheduleMenuLayoutUpdate()
+    scheduleAutoScrollStart(350)
     if (!didInitialCenter.value) {
       scrollContainer.value?.scrollTo({ left: 0, behavior: 'auto' })
       didInitialCenter.value = true
@@ -255,12 +360,66 @@ function onImageLoad() {
   })
 }
 
+function getLeadingContentRect(): DOMRect | null {
+  if (viewMode.value === 'gallery') {
+    const firstGalleryItem = galleryViewEl.value?.querySelector<HTMLElement>('.group')
+    return firstGalleryItem?.getBoundingClientRect() || galleryViewEl.value?.getBoundingClientRect() || null
+  }
+
+  const firstGridItem = gridViewEl.value?.querySelector<HTMLElement>('.gallery-grid-item')
+  return firstGridItem?.getBoundingClientRect() || gridViewEl.value?.getBoundingClientRect() || null
+}
+
+function updateMenuLayoutMode() {
+  const menu = menuEl.value
+  if (!menu) return
+
+  // Keep mobile behavior explicit and stable.
+  if (window.innerWidth <= 768) {
+    forceHorizontalMenu.value = true
+    return
+  }
+
+  const contentRect = getLeadingContentRect()
+  if (!contentRect) {
+    forceHorizontalMenu.value = false
+    return
+  }
+
+  const menuRect = menu.getBoundingClientRect()
+  const requiredGap = 18
+  const overlaps = menuRect.right + requiredGap > contentRect.left
+  forceHorizontalMenu.value = overlaps
+}
+
+function scheduleMenuLayoutUpdate() {
+  if (typeof window === 'undefined') return
+  if (menuLayoutRaf !== null) cancelAnimationFrame(menuLayoutRaf)
+  menuLayoutRaf = requestAnimationFrame(() => {
+    menuLayoutRaf = null
+    updateMenuLayoutMode()
+  })
+}
+
 watch([filteredImages, viewMode], async () => {
   await nextTick()
   if (viewMode.value === 'gallery') {
     updateEdgeBuffers()
+    scheduleAutoScrollStart()
+  } else {
+    stopAutoScroll()
   }
+  scheduleMenuLayoutUpdate()
 })
+
+watch(
+  () => scrollContainer.value,
+  async (container) => {
+    if (!container) return
+    await nextTick()
+    scheduleAutoScrollStart()
+  }
+)
 
 watch(filteredImages, (newImages, oldImages = []) => {
   const oldSet = new Set(oldImages)
@@ -281,20 +440,32 @@ watch(filteredImages, (newImages, oldImages = []) => {
       gridMoveResetTimer = null
     }, 420)
   }
+
+  nextTick(() => {
+    scheduleMenuLayoutUpdate()
+  })
 })
 
 onMounted(async () => {
+  hasUserStoppedAutoScroll.value = false
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('resize', onResize)
   await nextTick()
   updateEdgeBuffers()
+  scheduleMenuLayoutUpdate()
   // Keep the first image centered on initial load
   scrollContainer.value?.scrollTo({ left: 0, behavior: 'auto' })
+  scheduleAutoScrollStart(900)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
   window.removeEventListener('resize', onResize)
+  stopAutoScroll()
+  if (menuLayoutRaf !== null) {
+    cancelAnimationFrame(menuLayoutRaf)
+    menuLayoutRaf = null
+  }
   if (gridMoveResetTimer) {
     clearTimeout(gridMoveResetTimer)
     gridMoveResetTimer = null
@@ -303,15 +474,37 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-if="images.length > 0" class="relative w-full gallery-root">
+  <div v-if="images.length > 0" ref="galleryRootEl" class="relative w-full gallery-root" :class="{ 'menu-horizontal': forceHorizontalMenu }">
+    <!-- Shared category menu for both modes -->
+    <nav ref="menuEl" class="gallery-menu gallery-menu-vertical" :class="{ 'gallery-menu-force-horizontal': forceHorizontalMenu }" aria-label="Gallery categories">
+      <button
+        class="gallery-menu-link gallery-menu-toggle"
+        @click="toggleViewMode"
+      >
+        {{ viewMode === 'gallery' ? 'Grid' : 'Gallery' }}
+      </button>
+      <button
+        v-for="category in menuCategories"
+        :key="category"
+        class="gallery-menu-link gallery-menu-category"
+        :class="{ 'is-active': selectedCategory === category }"
+        @click="setCategory(category)"
+      >
+        {{ category }}
+      </button>
+    </nav>
+
     <Transition name="mode-fade" mode="out-in">
       <!-- Horizontal gallery view -->
       <div
         v-if="viewMode === 'gallery'"
         :key="`gallery-${selectedCategory}`"
-        ref="scrollContainer"
-        class="flex gap-6 overflow-x-auto"
+        :ref="setGalleryViewRef"
+        class="gallery-view flex gap-6 overflow-x-auto"
         style="scroll-behavior: auto;"
+        @wheel.passive="onGalleryUserIntent"
+        @touchstart.passive="onGalleryUserIntent"
+        @pointerdown="onGalleryUserIntent"
       >
         <div class="edge-spacer" :style="{ width: `${leftEdgeBuffer}px` }" aria-hidden="true"></div>
         <div
@@ -339,7 +532,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Grid view -->
-      <div v-else key="grid" class="gallery-grid-layout">
+      <div v-else key="grid" ref="gridViewEl" class="gallery-grid-layout">
         <TransitionGroup
           name="grid-fade"
           tag="div"
@@ -376,25 +569,6 @@ onUnmounted(() => {
     <div v-if="filteredImages.length === 0" class="py-10 text-center text-gray-400 text-sm">
       No images in this category yet.
     </div>
-
-    <!-- Shared category menu for both modes -->
-    <nav class="gallery-menu gallery-menu-vertical" aria-label="Gallery categories">
-      <button
-        class="gallery-menu-link gallery-menu-toggle"
-        @click="toggleViewMode"
-      >
-        {{ viewMode === 'gallery' ? 'Grid' : 'Gallery' }}
-      </button>
-      <button
-        v-for="category in menuCategories"
-        :key="category"
-        class="gallery-menu-link gallery-menu-category"
-        :class="{ 'is-active': selectedCategory === category }"
-        @click="setCategory(category)"
-      >
-        {{ category }}
-      </button>
-    </nav>
   </div>
 
   <!-- Empty state -->
@@ -551,6 +725,23 @@ onUnmounted(() => {
   transform: none;
   width: max-content;
   z-index: 20;
+}
+
+.gallery-root.menu-horizontal {
+  --gallery-vertical-offset: 0.75rem;
+}
+
+.gallery-menu-force-horizontal {
+  position: static;
+  margin-top: 1rem;
+  gap: 0.95rem;
+  left: auto;
+  top: auto;
+  width: 100%;
+  z-index: auto;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding-left: 0;
 }
 
 /* Mobile: move menu to top and stack horizontally */

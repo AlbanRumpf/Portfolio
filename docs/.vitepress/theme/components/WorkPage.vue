@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { withBase, useRouter, useData, useRoute } from 'vitepress'
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import HorizontalImageGallery from './HorizontalImageGallery.vue'
 
 type Card = {
@@ -372,6 +372,29 @@ watch(currentSlug, () => {
 const isPanelOpen = ref(false)
 const panelContent = ref<HTMLElement | null>(null)
 const panelScrolled = ref(false)
+const stackInstallationsOtherCardsBelow = ref(false)
+
+function updateInstallationsOtherCardsPlacement() {
+  if (
+    !isPanelOpen.value ||
+    currentCategory.value !== 'installations' ||
+    otherCards.value.length === 0 ||
+    !panelContent.value
+  ) {
+    stackInstallationsOtherCardsBelow.value = false
+    return
+  }
+
+  const panelRect = panelContent.value.getBoundingClientRect()
+  const requiredLeftSpace = 260 // left offset + card width + breathing room
+  stackInstallationsOtherCardsBelow.value = panelRect.left < requiredLeftSpace
+}
+
+function scheduleInstallationsCardsPlacementCheck() {
+  nextTick(() => {
+    updateInstallationsOtherCardsPlacement()
+  })
+}
 
 function onPanelScroll() {
   if (!panelContent.value) return
@@ -391,6 +414,7 @@ function openPanel(slug: string, routePath: string) {
       panelContent.value.scrollTop = 0
       panelScrolled.value = false
     }
+    updateInstallationsOtherCardsPlacement()
   })
 }
 
@@ -398,6 +422,7 @@ function openPanel(slug: string, routePath: string) {
 function closePanel() {
   isPanelOpen.value = false
   panelScrolled.value = false
+  stackInstallationsOtherCardsBelow.value = false
   currentSlug.value = undefined
   // Navigate back to the category page
   router.go(withBase(`/${currentCategory.value}/`))
@@ -552,9 +577,28 @@ onMounted(() => {
     if (foundCard) {
       currentSlug.value = slugFromUrl
       isPanelOpen.value = true
+      scheduleInstallationsCardsPlacementCheck()
     }
   }
+
+  window.addEventListener('resize', scheduleInstallationsCardsPlacementCheck)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('resize', scheduleInstallationsCardsPlacementCheck)
+})
+
+watch(
+  [
+    () => isPanelOpen.value,
+    () => currentCategory.value,
+    () => otherCards.value.length,
+    () => currentSlug.value,
+  ],
+  () => {
+    scheduleInstallationsCardsPlacementCheck()
+  }
+)
 
 </script>
 
@@ -726,7 +770,10 @@ onMounted(() => {
       <div class="absolute inset-0 transition-opacity" style="background-color: #555a5e;" @click="closePanel"></div>
       
       <!-- Left Side: Other Project Cards -->
-      <div v-if="otherCards.length > 0" class="absolute left-8 top-1/2 transform -translate-y-1/2 z-[70] flex flex-col gap-4">
+      <div
+        v-if="otherCards.length > 0 && !(currentCategory === 'installations' && stackInstallationsOtherCardsBelow)"
+        class="absolute left-8 top-1/2 transform -translate-y-1/2 z-[70] flex flex-col gap-4"
+      >
         <a
           v-for="otherCard in otherCards"
           :key="otherCard.slug"
@@ -777,6 +824,32 @@ onMounted(() => {
                 :is="currentCard.component"
                 class="prose prose-base md:prose-lg max-w-none prose-invert"
               />
+
+              <div
+                v-if="currentCategory === 'installations' && stackInstallationsOtherCardsBelow && otherCards.length > 0"
+                class="mt-8 pt-6 border-t border-white/20"
+              >
+                <h3 class="text-sm uppercase tracking-[0.18em] text-gray-300 mb-4">Other</h3>
+                <div class="flex gap-4 overflow-x-auto pb-2">
+                  <a
+                    v-for="otherCard in otherCards"
+                    :key="`below-${otherCard.slug}`"
+                    :href="withBase(otherCard.route)"
+                    @click.prevent="openPanel(otherCard.slug, otherCard.route)"
+                    class="relative w-36 h-36 rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-2xl block group flex-shrink-0"
+                  >
+                    <img
+                      v-if="otherCard.image"
+                      :src="resolveImageUrl(otherCard.image)"
+                      :alt="otherCard.title"
+                      class="w-full h-full object-cover"
+                    />
+                    <div v-else class="w-full h-full bg-gray-700 flex items-center justify-center">
+                      <span class="text-white text-center px-3 text-xs">{{ otherCard.title }}</span>
+                    </div>
+                  </a>
+                </div>
+              </div>
             </div>
 
             <div v-else class="p-8 text-gray-400">

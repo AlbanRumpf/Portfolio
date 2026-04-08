@@ -53,12 +53,12 @@ onUnmounted(() => {
 <template>
   <div class="about-layout flex flex-row gap-12 min-h-[80vh] items-start text-white">
     <!-- Image on left -->
-    <div class="flex-shrink-0 pt-4 fade-in-image">
-      <img :src="portraitImage" alt="Portrait" class="w-80 h-auto rounded-lg" />
+    <div class="about-image-wrap flex-shrink-0 pt-4 fade-in-image">
+      <img :src="portraitImage" alt="Portrait" class="about-image w-80 h-auto rounded-lg" />
     </div>
     
     <!-- Content on right -->
-    <div class="flex-1 fade-in-content">
+    <div class="about-content-wrap flex-1 fade-in-content">
       <Content class="prose prose-invert prose-base md:prose-lg max-w-none break-words" />
     </div>
   </div>
@@ -76,9 +76,121 @@ onUnmounted(() => {
   transform: translateX(var(--about-horizontal-offset));
 }
 
+.about-image-wrap {
+  align-self: flex-start;
+}
+
+.about-image {
+  width: clamp(160px, 24vw, 320px);
+  max-width: 100%;
+  height: auto;
+}
+
+.about-content-wrap {
+  min-width: 0;
+  width: 100%;
+}
+
+:deep(.prose) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+:deep(.prose p),
+:deep(.prose li),
+:deep(.prose h1),
+:deep(.prose h2),
+:deep(.prose h3),
+:deep(.prose h4),
+:deep(.prose h5),
+:deep(.prose h6) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+:deep(.prose a),
+:deep(.prose code),
+:deep(.prose pre) {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 1200px) {
+  .about-layout {
+    transform: none;
+    gap: clamp(0.75rem, 2vw, 1.25rem);
+    width: 100%;
+    max-width: 100%;
+    padding-right: var(--layout-gutter);
+    box-sizing: border-box;
+  }
+
+  .about-image {
+    width: clamp(110px, 21vw, 190px);
+  }
+
+  .about-content-wrap {
+    min-width: 0;
+  }
+
+  :deep(.also-glitch-line) {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  :deep(.also-line-clean),
+  :deep(.also-line-glitch),
+  :deep(.also-line-glitch::before),
+  :deep(.also-line-glitch::after) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
 @media (max-width: 768px) {
   .about-layout {
     transform: none;
+    gap: clamp(0.6rem, 2.8vw, 1rem);
+    align-items: flex-start;
+    width: 100%;
+    max-width: 100%;
+    padding-left: clamp(var(--layout-gutter), calc(var(--nav-about-left, var(--layout-gutter)) - var(--layout-gutter)), 22vw);
+    padding-right: var(--layout-gutter);
+    box-sizing: border-box;
+  }
+
+  .about-image {
+    width: clamp(96px, 28vw, 150px);
+  }
+
+  .about-content-wrap {
+    min-width: 0;
+    max-width: calc(100vw - clamp(96px, 28vw, 150px) - clamp(0.6rem, 2.8vw, 1rem) - (var(--layout-gutter) * 2));
+  }
+}
+
+@media (max-width: 1024px) and (orientation: portrait) {
+  .about-layout {
+    transform: none;
+    gap: clamp(0.65rem, 2.4vw, 1rem);
+    align-items: flex-start;
+    width: 100%;
+    max-width: 100%;
+    padding-left: clamp(var(--layout-gutter), calc(var(--nav-about-left, var(--layout-gutter)) - var(--layout-gutter)), 20vw);
+    padding-right: var(--layout-gutter);
+    box-sizing: border-box;
+  }
+
+  .about-image {
+    width: clamp(104px, 24vw, 170px);
+  }
+
+  .about-content-wrap {
+    min-width: 0;
   }
 }
 
