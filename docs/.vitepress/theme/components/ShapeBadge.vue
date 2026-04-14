@@ -1038,25 +1038,4 @@ defineExpose({
 .hover-labels-container.is-vertical .hover-label-right {
   transform: translateX(-50%);
 }
-
-@media (max-width: 900px) {
-  .hover-label {
-    left: 50%;
-    right: auto;
-    text-align: center;
-    max-width: min(92vw, 32rem);
-    white-space: normal;
-    line-height: 1.2;
-  }
-
-  .hover-label-left {
-    top: -1.4rem;
-    transform: translateX(-50%) translateY(-100%);
-  }
-
-  .hover-label-right {
-    top: calc(100% + 1.4rem);
-    transform: translateX(-50%) translateY(0);
-  }
-}
 </style>

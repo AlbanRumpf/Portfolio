@@ -67,6 +67,10 @@ const cursorX = ref(0)
 const cursorY = ref(0)
 const cursorVisible = ref(false)
 const cursorIsInteractive = ref(false)
+const isTrackingLargeShape = ref(false)
+let cursorFrameId: number | null = null
+let pendingCursorX = 0
+let pendingCursorY = 0
 
 // whether to show the unlock screen (null = unknown during SSR, true = show unlock, false = show site)
 const showUnlock = ref<boolean | null>(null)
@@ -164,24 +168,54 @@ function isInteractiveElement(target: EventTarget | null): boolean {
 
 function updateCursorState(event: MouseEvent) {
   if (!isFinePointer.value) return
-  cursorX.value = event.clientX
-  cursorY.value = event.clientY
+  pendingCursorX = event.clientX
+  pendingCursorY = event.clientY
   cursorVisible.value = true
+
+  if (cursorFrameId !== null) return
+  cursorFrameId = requestAnimationFrame(() => {
+    cursorX.value = pendingCursorX
+    cursorY.value = pendingCursorY
+    cursorFrameId = null
+  })
+}
+
+function updateCursorInteractiveState(event: MouseEvent) {
+  if (!isFinePointer.value) return
   cursorIsInteractive.value = isInteractiveElement(event.target)
 }
 
 function hideCursorDot(event: MouseEvent) {
   if (event.relatedTarget === null) {
     cursorVisible.value = false
+    cursorIsInteractive.value = false
   }
 }
 
 function updateLargeShapeTracking(event: MouseEvent) {
-  if (!isHome.value || !isBelowHeroInView.value) return
-  largeShapeRef.value?.updateMouseFromEvent?.(event)
+  if (!isHome.value || !belowHeroRef.value) return
+
+  const rect = belowHeroRef.value.getBoundingClientRect()
+  const isInsideBelowHero =
+    event.clientX >= rect.left &&
+    event.clientX <= rect.right &&
+    event.clientY >= rect.top &&
+    event.clientY <= rect.bottom
+
+  if (isInsideBelowHero) {
+    isTrackingLargeShape.value = true
+    largeShapeRef.value?.updateMouseFromEvent?.(event)
+    return
+  }
+
+  if (isTrackingLargeShape.value) {
+    isTrackingLargeShape.value = false
+    stopLargeShapeTracking()
+  }
 }
 
 function stopLargeShapeTracking() {
+  isTrackingLargeShape.value = false
   largeShapeRef.value?.resetMotion?.()
 }
 
@@ -236,7 +270,8 @@ onMounted(() => {
     window.addEventListener('mouseout', handleLargeShapeMouseOut)
 
     if (isFinePointer.value) {
-      window.addEventListener('mousemove', updateCursorState)
+      window.addEventListener('mousemove', updateCursorState, { passive: true })
+      window.addEventListener('mouseover', updateCursorInteractiveState, { passive: true })
       window.addEventListener('mouseout', hideCursorDot)
     }
   })
@@ -260,7 +295,12 @@ onUnmounted(() => {
     belowHeroObserver = null
   }
   window.removeEventListener('mousemove', updateCursorState)
+  window.removeEventListener('mouseover', updateCursorInteractiveState)
   window.removeEventListener('mouseout', hideCursorDot)
+  if (cursorFrameId !== null) {
+    cancelAnimationFrame(cursorFrameId)
+    cursorFrameId = null
+  }
 })
 </script>
 
